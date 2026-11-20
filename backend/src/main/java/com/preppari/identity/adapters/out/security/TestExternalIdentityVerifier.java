@@ -25,6 +25,7 @@ public final class TestExternalIdentityVerifier implements ExternalIdentityVerif
   }
 
   private static UnauthorizedException invalid() {
-    return new UnauthorizedException("INVALID_IDENTITY_TOKEN", "El token de Google no es válido.");
+    return new UnauthorizedException(
+        "INVALID_IDENTITY_TOKEN", "No pudimos entrar con Google. Intentá de nuevo.");
   }
 }

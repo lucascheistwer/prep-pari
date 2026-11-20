@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
+import { WayHome } from "@/components/household/WayHome";
 import { Alert } from "@/components/ui/Alert";
 import { Button, buttonClass } from "@/components/ui/Button";
 import {
@@ -89,7 +89,7 @@ export function HouseholdScreen() {
       setCopied(true);
     } catch {
       setCopied(false);
-      setError("No pudimos copiar el enlace. Seleccionalo y copialo a mano.");
+      setError("No se pudo copiar. Probá de nuevo.");
     }
   }
 
@@ -147,7 +147,7 @@ export function HouseholdScreen() {
             <h2 className="font-display text-2xl">Integrantes</h2>
             {household.members.length === 1 ? (
               <p className="text-sm leading-6 text-text-muted">
-                Por ahora estás solo. Invitá a alguien para compartir el plan y la lista.
+                Todavía no hay nadie más.
               </p>
             ) : null}
             <ul className="space-y-2">
@@ -201,8 +201,7 @@ export function HouseholdScreen() {
             <section className="space-y-3">
               <h2 className="font-display text-2xl">Invitar</h2>
               <p className="text-sm leading-6 text-text-muted">
-                El enlace se usa una sola vez y vence en 7 días. No lo enviamos por email:
-                copialo y pasalo.
+                Compartilo con alguien de tu casa.
               </p>
               <Button
                 type="button"
@@ -214,16 +213,8 @@ export function HouseholdScreen() {
               </Button>
               {invitation ? (
                 <div className="space-y-3 rounded-card border border-border bg-surface p-3">
-                  <label htmlFor="enlace" className="block text-sm font-semibold">
-                    Enlace de invitación
-                  </label>
-                  <input
-                    id="enlace"
-                    readOnly
-                    value={invitation.url}
-                    className="min-h-11 w-full rounded-card border border-border bg-surface-subtle px-3 text-sm"
-                    onFocus={(event) => event.currentTarget.select()}
-                  />
+                  <p className="text-sm font-semibold">Listo para compartir</p>
+                  <p className="truncate text-sm text-text-muted">{invitation.url}</p>
                   <p className="text-sm text-text-muted">
                     Vence el {formatWhen(invitation.expiresAt)}.
                   </p>
@@ -280,10 +271,9 @@ export function HouseholdScreen() {
               ) : null}
             </section>
           ) : null}
-          <Link href="/hogar/nuevo" className={`${buttonClass("ghost")} w-full`}>
-            Crear otro hogar
-          </Link>
         </>
+      ) : error ? (
+        <WayHome />
       ) : null}
     </Shell>
   );

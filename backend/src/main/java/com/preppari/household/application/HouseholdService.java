@@ -63,6 +63,9 @@ public final class HouseholdService {
     return transactions.inTransaction(
         () -> {
           requireProfile(actor);
+          if (!households.listActiveFor(actor).isEmpty()) {
+            throw new ConflictException("ALREADY_HAS_HOUSEHOLD", "Ya formás parte de un hogar.");
+          }
           Instant now = clock.now();
           Household household =
               Household.create(new HouseholdId(ids.newId()), name, timezone, actor, now);
@@ -94,7 +97,7 @@ public final class HouseholdService {
               >= HouseholdInvitation.MAX_USABLE_PENDING) {
             throw new DomainException(
                 "TOO_MANY_INVITATIONS",
-                "Este hogar ya tiene demasiadas invitaciones sin usar. Revocá alguna antes de crear otra.");
+                "Ya hay varias invitaciones esperando. Cancelá una para crear otra.");
           }
           String rawToken = tokens.newToken();
           HouseholdInvitation invitation =
@@ -146,6 +149,12 @@ public final class HouseholdService {
               memberships.find(invitation.householdId(), actor).orElse(null);
           if (existing != null && existing.isActive()) {
             throw new ConflictException("ALREADY_MEMBER", "Ya formás parte de este hogar.");
+          }
+          boolean inAnotherHousehold =
+              households.listActiveFor(actor).stream()
+                  .anyMatch((summary) -> !summary.id().equals(invitation.householdId()));
+          if (inAnotherHousehold) {
+            throw new ConflictException("ALREADY_HAS_HOUSEHOLD", "Ya formás parte de un hogar.");
           }
           if (existing == null) {
             memberships.insert(

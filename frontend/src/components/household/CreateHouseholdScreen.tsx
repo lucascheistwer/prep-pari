@@ -1,18 +1,31 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
-import { api, errorMessage, type Household } from "@/lib/api";
+import { api, errorMessage, type Household, type Me } from "@/lib/api";
 
 export function CreateHouseholdScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api<Me>("/api/v1/me")
+      .then((me) => {
+        const household = me.households[0];
+        if (!cancelled && household) router.replace(`/hogar/${household.id}`);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +55,7 @@ export function CreateHouseholdScreen() {
           Creá tu hogar
         </h1>
         <p className="text-base leading-7 text-text-muted">
-          El hogar junta a las personas que cocinan juntas. Quien lo crea lo administra.
+          Un nombre alcanza para empezar.
         </p>
       </div>
       {error ? <Alert tone="error">{error}</Alert> : null}

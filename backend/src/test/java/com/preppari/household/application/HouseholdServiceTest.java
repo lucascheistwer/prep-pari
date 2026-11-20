@@ -82,6 +82,26 @@ class HouseholdServiceTest {
     assertThatThrownBy(() -> service.removeMember(bruno, home.id(), ana))
         .isInstanceOf(NotFoundException.class);
     assertThatThrownBy(() -> service.get(ana, other.id())).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.create(ana, "Otro de Ana", null))
+        .isInstanceOf(ConflictException.class)
+        .extracting(DomainException.class::cast)
+        .extracting(DomainException::code)
+        .isEqualTo("ALREADY_HAS_HOUSEHOLD");
+  }
+
+  @Test
+  void someoneWhoAlreadyHasAHouseholdCannotJoinAnother() {
+    Detail home = service.create(ana, "Casa", null);
+    service.create(bruno, "Lo de Bruno", null);
+    tokens.add("cruce");
+    service.invite(ana, home.id());
+
+    assertThatThrownBy(() -> service.accept(bruno, "cruce"))
+        .isInstanceOf(ConflictException.class)
+        .extracting(DomainException.class::cast)
+        .extracting(DomainException::code)
+        .isEqualTo("ALREADY_HAS_HOUSEHOLD");
+    assertThat(invitations.only().status()).isEqualTo(InvitationStatus.PENDING);
   }
 
   @Test

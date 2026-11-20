@@ -17,7 +17,7 @@ public final class GoogleIdentityRules {
   public static VerifiedIdentity verify(GoogleTokenClaims claims, String clientId, Instant now) {
     if (clientId == null || clientId.isBlank()) {
       throw new UnavailableException(
-          "AUTH_PROVIDER_NOT_CONFIGURED", "El ingreso con Google no está configurado.");
+          "AUTH_PROVIDER_NOT_CONFIGURED", "Ahora no se puede entrar con Google.");
     }
     if (claims == null
         || (!ISSUER_HTTPS.equals(claims.issuer()) && !ISSUER_BARE.equals(claims.issuer()))) {
@@ -33,7 +33,7 @@ public final class GoogleIdentityRules {
         || claims.email() == null
         || claims.email().isBlank()) {
       throw new UnauthorizedException(
-          "EMAIL_NOT_VERIFIED", "Google no nos pasó un email verificado.");
+          "EMAIL_NOT_VERIFIED", "No pudimos usar esa cuenta de Google.");
     }
     ExternalSubject subject;
     try {
@@ -46,6 +46,7 @@ public final class GoogleIdentityRules {
   }
 
   private static UnauthorizedException invalid() {
-    return new UnauthorizedException("INVALID_IDENTITY_TOKEN", "El token de Google no es válido.");
+    return new UnauthorizedException(
+        "INVALID_IDENTITY_TOKEN", "No pudimos entrar con Google. Intentá de nuevo.");
   }
 }

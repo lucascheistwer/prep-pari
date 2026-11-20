@@ -50,12 +50,17 @@ docker compose up postgres redis
 cp .env.example .env
 ```
 
-API, en una terminal:
+Maven no lee el `.env` de la raíz. Hay que cargarlo en el entorno del proceso, desde la raíz del repo:
 
 ```bash
+set -a
+. ./.env
+set +a
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
+
+Sin ese `source`, `GOOGLE_CLIENT_ID` no llega y `/api/v1/auth/config` responde `googleClientId: null`. `make api` hace la carga y el arranque.
 
 Worker, en otra. Hay que esperar a que la API haya migrado:
 
@@ -87,7 +92,7 @@ Hay dos maneras. Las dos terminan en la misma cuenta interna, identificada por e
 
 Copiá `.env.example` a `.env` y dejá `GOOGLE_CLIENT_ID`. `GOOGLE_CLIENT_SECRET` queda vacía: no hace falta y la aplicación no la lee. Levantá la API con el perfil `local` y el frontend, abrí http://localhost:3000/ingresar y usá el botón de Google.
 
-**Sin Google.** En los perfiles `local` y `test` la pantalla de ingreso muestra «Modo desarrollo». El identificador (por ejemplo `ana`) vuelve a entrar siempre como la misma persona. En `production` ese endpoint no existe y, si alguien lo enciende, la API no arranca.
+**Sin Google.** En los perfiles `local` y `test` la pantalla tiene «Entrar sin Google». El nombre se usa para volver a entrar como la misma persona. En `production` ese ingreso no existe y, si alguien lo enciende, la API no arranca.
 
 Con una cuenta, creá un hogar, generá un enlace y abrilo con otra cuenta (otra ventana en modo desarrollo, u otra cuenta de Google) para aceptar la invitación.
 

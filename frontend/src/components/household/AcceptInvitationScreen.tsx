@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
+import { WayHome } from "@/components/household/WayHome";
 import { Alert } from "@/components/ui/Alert";
 import { Button, buttonClass } from "@/components/ui/Button";
 import {
@@ -63,10 +64,20 @@ export function AcceptInvitationScreen() {
     }
   }
 
+  async function logout() {
+    await api("/api/v1/auth/logout", { method: "POST" }).catch(() => undefined);
+    router.replace("/ingresar");
+  }
+
   return (
-    <Shell>
+    <Shell onLogout={() => void logout()}>
       {loading ? <p className="text-sm text-text-muted">Cargando…</p> : null}
-      {error ? <Alert tone="error">{error}</Alert> : null}
+      {error ? (
+        <div className="space-y-4">
+          <Alert tone="error">{error}</Alert>
+          <WayHome />
+        </div>
+      ) : null}
       {preview ? (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -74,8 +85,7 @@ export function AcceptInvitationScreen() {
               Te invitaron a {preview.householdName}
             </h1>
             <p className="text-base leading-7 text-text-muted">
-              {preview.inviterName} te invitó a organizar las comidas de este hogar. El
-              enlace vence el {formatWhen(preview.expiresAt)}.
+              {preview.inviterName} te invitó. Vence el {formatWhen(preview.expiresAt)}.
             </p>
           </div>
           {preview.alreadyMember ? (

@@ -1,7 +1,10 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { buttonClass } from "@/components/ui/Button";
+import { ApiError, api, type Me } from "@/lib/api";
 
 export function Shell({
   children,
@@ -10,6 +13,24 @@ export function Shell({
   children: ReactNode;
   onLogout?: () => void;
 }) {
+  const [name, setName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api<Me>("/api/v1/me")
+      .then((me) => {
+        if (!cancelled) setName(me.displayName);
+      })
+      .catch((reason: unknown) => {
+        if (!cancelled && reason instanceof ApiError) setName(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const initial = name?.trim().charAt(0).toLocaleUpperCase("es-AR");
+
   return (
     <>
       <a
@@ -23,10 +44,26 @@ export function Shell({
           <Link href="/" aria-label="PrepPari, inicio">
             <Wordmark />
           </Link>
-          {onLogout ? (
-            <button type="button" className={buttonClass("ghost")} onClick={onLogout}>
-              Salir
-            </button>
+          {name || onLogout ? (
+            <div className="flex min-w-0 items-center gap-2">
+              {name ? (
+                <p className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+                  <span
+                    aria-hidden
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-accent text-text"
+                  >
+                    {initial}
+                  </span>
+                  <span className="truncate">{name}</span>
+                  <span className="sr-only">Sesión de {name}</span>
+                </p>
+              ) : null}
+              {onLogout ? (
+                <button type="button" className={buttonClass("ghost")} onClick={onLogout}>
+                  Salir
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </header>

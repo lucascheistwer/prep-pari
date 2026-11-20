@@ -31,11 +31,23 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return payload as T;
 }
 
+const friendlyErrors: Record<string, string> = {
+  INVALID_IDENTITY_TOKEN: "No pudimos entrar con Google. Intentá de nuevo.",
+  EMAIL_NOT_VERIFIED: "No pudimos usar esa cuenta de Google.",
+  AUTH_PROVIDER_NOT_CONFIGURED: "Ahora no se puede entrar con Google.",
+  AUTH_PROVIDER_UNAVAILABLE: "No pudimos entrar con Google. Intentá de nuevo.",
+  DEV_LOGIN_DISABLED: "No pudimos entrar. Probá con Google.",
+  UNAUTHENTICATED: "Tenés que entrar para seguir.",
+  VALIDATION_ERROR: "Revisá lo que escribiste.",
+  INTERNAL_ERROR: "Algo salió mal. Intentá de nuevo.",
+  ALREADY_HAS_HOUSEHOLD: "Ya formás parte de un hogar.",
+};
+
 export function errorMessage(error: unknown) {
   if (error instanceof ApiError) {
-    return error.message;
+    return friendlyErrors[error.code] ?? error.message;
   }
-  return "No pudimos hablar con PrepPari. Revisá tu conexión e intentá de nuevo.";
+  return "No pudimos conectar. Intentá de nuevo.";
 }
 
 export type SessionUser = {
@@ -98,9 +110,16 @@ export type InvitationPreview = {
 
 export function formatWhen(iso: string) {
   return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(iso));
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "America/Argentina/Buenos_Aires",
+  })
+    .format(new Date(iso))
+    .replace(/\.$/, "");
 }
 
 export function roleLabel(role: "OWNER" | "MEMBER") {

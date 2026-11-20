@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
 import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { ApiError, api, errorMessage, type AuthConfig, type Me } from "@/lib/api";
 import { safeNext } from "@/lib/navigation";
@@ -16,10 +16,9 @@ export function LoginScreen() {
   const buttonHost = useRef<HTMLDivElement>(null);
   const [config, setConfig] = useState<AuthConfig | null>(null);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [googleFailed, setGoogleFailed] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -107,15 +106,20 @@ export function LoginScreen() {
 
   async function onDev(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const displayName = name.trim();
+    const devSubject = toDevSubject(displayName);
+    if (!devSubject) {
+      setError("Escribí tu nombre.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       await api("/api/v1/auth/dev", {
         method: "POST",
         body: JSON.stringify({
-          subject: subject.trim(),
-          displayName: name.trim(),
-          email: email.trim() || null,
+          subject: devSubject,
+          displayName,
         }),
       });
       router.replace(next);
@@ -133,8 +137,7 @@ export function LoginScreen() {
           Entrá a PrepPari
         </h1>
         <p className="text-base leading-7 text-text-muted">
-          Organizá las comidas de tu hogar. El ingreso es con Google: no hace falta una
-          contraseña de PrepPari.
+          Las comidas de tu casa, en un solo lugar.
         </p>
       </div>
       {loading ? <p className="text-sm text-text-muted">Cargando…</p> : null}
@@ -143,58 +146,46 @@ export function LoginScreen() {
         <div className="space-y-2">
           <div ref={buttonHost} className="min-h-11" />
           {googleFailed ? (
-            <Alert tone="error">No pudimos cargar el botón de Google.</Alert>
+            <Alert tone="error">No pudimos entrar con Google. Intentá de nuevo.</Alert>
           ) : null}
         </div>
-      ) : config && !config.devLoginEnabled ? (
-        <Alert tone="info">
-          El ingreso con Google no está configurado en este ambiente.
-        </Alert>
       ) : null}
       {config?.devLoginEnabled ? (
-        <form
-          onSubmit={onDev}
-          className="space-y-4 rounded-card border border-border bg-surface p-4"
-        >
-          <div className="space-y-1">
-            <h2 className="font-display text-2xl">Modo desarrollo</h2>
-            <p className="text-sm leading-6 text-text-muted">
-              Este ingreso solo existe en esta computadora. No usa Google y no está
-              disponible en producción.
-            </p>
-          </div>
-          <TextField
-            id="nombre"
-            label="Nombre"
-            autoComplete="name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-          />
-          <TextField
-            id="email"
-            label="Email"
-            type="email"
-            autoComplete="email"
-            hint="Opcional."
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <TextField
-            id="identificador"
-            label="Identificador"
-            hint="Letras, números, punto o guion. Sirve para volver a entrar como la misma persona."
-            autoComplete="username"
-            value={subject}
-            onChange={(event) => setSubject(event.target.value)}
-            required
-            pattern="[A-Za-z0-9._-]{1,64}"
-          />
-          <Button type="submit" className="w-full" disabled={busy}>
-            {busy ? "Entrando…" : "Entrar en modo desarrollo"}
-          </Button>
-        </form>
+        devOpen ? (
+          <form onSubmit={onDev} className="space-y-3">
+            <TextField
+              id="nombre"
+              label="Tu nombre"
+              autoComplete="name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+            />
+            <Button type="submit" variant="secondary" className="w-full" disabled={busy}>
+              {busy ? "Entrando…" : "Entrar"}
+            </Button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            className={buttonClass("ghost", "w-full")}
+            onClick={() => setDevOpen(true)}
+          >
+            Entrar sin Google
+          </button>
+        )
       ) : null}
     </Shell>
   );
+}
+
+function toDevSubject(name: string) {
+  const subject = name
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 64);
+  return /^[a-z0-9][a-z0-9-]{0,63}$/.test(subject) ? subject : "";
 }

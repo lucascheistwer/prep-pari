@@ -28,18 +28,18 @@ public final class GoogleIdTokenVerifier implements ExternalIdentityVerifier {
   public VerifiedIdentity verify(String idToken) {
     if (clientId == null || clientId.isBlank()) {
       throw new UnavailableException(
-          "AUTH_PROVIDER_NOT_CONFIGURED", "El ingreso con Google no está configurado.");
+          "AUTH_PROVIDER_NOT_CONFIGURED", "Ahora no se puede entrar con Google.");
     }
     GoogleTokenClaims claims;
     try {
       claims = reader.read(idToken);
     } catch (GoogleTokenUnavailable ex) {
-      log.warn("No se pudo validar el token de Google con el proveedor.");
+      log.warn("No se pudo validar el ingreso con Google.");
       throw new UnavailableException(
-          "AUTH_PROVIDER_UNAVAILABLE",
-          "No pudimos validar el ingreso con Google. Intentá de nuevo.");
+          "AUTH_PROVIDER_UNAVAILABLE", "No pudimos entrar con Google. Intentá de nuevo.");
     } catch (RuntimeException ex) {
-      throw new UnauthorizedException("INVALID_IDENTITY_TOKEN", "El token de Google no es válido.");
+      throw new UnauthorizedException(
+          "INVALID_IDENTITY_TOKEN", "No pudimos entrar con Google. Intentá de nuevo.");
     }
     return GoogleIdentityRules.verify(claims, clientId, clock.now());
   }

@@ -45,8 +45,7 @@ public final class IdentityService {
 
   public Session signInWithDev(String subject, String email, String displayName) {
     if (!devLoginEnabled) {
-      throw new ForbiddenException(
-          "DEV_LOGIN_DISABLED", "El ingreso de desarrollo no está habilitado.");
+      throw new ForbiddenException("DEV_LOGIN_DISABLED", "No pudimos entrar. Probá con Google.");
     }
     return openSession(ExternalSubject.dev(subject), email, displayName);
   }

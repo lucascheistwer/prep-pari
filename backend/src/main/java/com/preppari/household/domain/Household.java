@@ -34,7 +34,8 @@ public record Household(
     String normalized = name == null ? "" : name.trim().replaceAll("\\s+", " ");
     if (normalized.isEmpty() || normalized.length() > 80) {
       throw new DomainException(
-          "INVALID_HOUSEHOLD_NAME", "El nombre del hogar tiene que tener entre 1 y 80 caracteres.");
+          "INVALID_HOUSEHOLD_NAME",
+          normalized.isEmpty() ? "El hogar necesita un nombre." : "Ese nombre es demasiado largo.");
     }
     return normalized;
   }
