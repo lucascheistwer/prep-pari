@@ -10,6 +10,8 @@ Se contrastó la documentación pública el 20 de noviembre de 2026:
 - Daemons: https://vercel.com/docs/daemons
 - Referencia de daemons: https://vercel.com/docs/daemons/config-reference
 
+El servicio `frontend` declara `framework: "nextjs"`. `frontend/` tiene `next.config.ts` y un `Dockerfile` para Compose. Sin ese campo el deploy falla con `MULTIPLE_FRAMEWORKS_SERVICE`: Vercel detecta Next.js y Container a la vez. El `Dockerfile` del frontend sigue siendo el de Compose. El servicio `api` no cambia: ya fija `runtime: "container"`.
+
 `experimentalServices` quedó atrás. El modelo vigente es `services` más `rewrites` con `destination.service`, y `daemons` al lado. Un daemon exige `root`, `entrypoint` e `instances`. El entrypoint puede llamarse `Dockerfile.worker`. El nombre `enrichment-worker` cumple las reglas de nombres (minúsculas y guiones).
 
 Durante la beta los daemons solo corren en producción, con cantidad de instancias manual, sin disco persistente y sin preview. `vercel dev` no los levanta. Por eso el worker se prueba con Docker Compose.
