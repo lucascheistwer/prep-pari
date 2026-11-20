@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { readPhoto } from "@/components/dishes/read-photo";
-import { Button } from "@/components/ui/Button";
-import { Field, Notice, SelectInput, TextInput } from "@/components/ui/kit";
+import { buttonClass, Button } from "@/components/ui/Button";
+import { Field, Notice, SelectInput, TextArea, TextInput } from "@/components/ui/kit";
 import { createDish } from "@/data/kitchen-store";
 import { DISH_CATEGORY_LABELS } from "@/domain/labels";
 import { DISH_CATEGORIES, type DishCategory } from "@/domain/types";
@@ -12,6 +12,7 @@ import { DISH_CATEGORIES, type DishCategory } from "@/domain/types";
 export function CreateDishScreen() {
   const router = useRouter();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [category, setCategory] = useState<DishCategory>("OTROS");
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export function CreateDishScreen() {
   }
 
   function save(suggest: boolean) {
-    const result = createDish({ title, category, imageDataUrl, suggest });
+    const result = createDish({ title, description, category, imageDataUrl, suggest });
     if (!result.ok) {
       setError(result.message);
       return;
@@ -44,7 +45,9 @@ export function CreateDishScreen() {
     <div className="mx-auto max-w-lg space-y-5">
       <div>
         <h1 className="font-display text-3xl text-text">Nueva comida</h1>
-        <p className="mt-1 text-sm text-text-muted">Con el nombre alcanza.</p>
+        <p className="mt-1 text-sm leading-6 text-text-muted">
+          Con el nombre alcanza. La descripción es opcional.
+        </p>
       </div>
       <form
         className="space-y-4"
@@ -66,6 +69,16 @@ export function CreateDishScreen() {
             }}
           />
         </Field>
+        <Field id="descripcion" label="Descripción" hint="Opcional.">
+          <TextArea
+            id="descripcion"
+            value={description}
+            maxLength={400}
+            rows={3}
+            placeholder="La de los domingos, con mucha acelga"
+            onChange={(event) => setDescription(event.target.value)}
+          />
+        </Field>
         <Field id="categoria" label="Categoría">
           <SelectInput
             id="categoria"
@@ -81,38 +94,43 @@ export function CreateDishScreen() {
         </Field>
         <div className="space-y-2">
           <p className="text-sm font-semibold text-text">Foto</p>
-          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-card border border-border bg-surface px-4 text-sm font-semibold text-text">
-            {imageDataUrl ? "Cambiar foto" : "Agregar foto"}
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(event) => void onPhoto(event.target.files?.[0])}
-            />
-          </label>
-          {imageDataUrl ? (
-            <button
-              type="button"
-              className="ml-2 inline-flex min-h-11 items-center text-sm font-semibold text-text-muted"
-              onClick={() => setImageDataUrl(null)}
-            >
-              Quitar
-            </button>
-          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <label className={buttonClass("secondary", "cursor-pointer")}>
+              {imageDataUrl ? "Cambiar foto" : "Agregar foto"}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(event) => void onPhoto(event.target.files?.[0])}
+              />
+            </label>
+            {imageDataUrl ? (
+              <button
+                type="button"
+                className={buttonClass("ghost")}
+                onClick={() => setImageDataUrl(null)}
+              >
+                Quitar
+              </button>
+            ) : null}
+          </div>
           {photoError ? <Notice tone="danger">{photoError}</Notice> : null}
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="submit" className="w-full sm:w-auto">
+        <div className="flex flex-col gap-2">
+          <Button type="submit" className="w-full">
             Guardar
           </Button>
           <Button
             type="button"
             variant="secondary"
-            className="w-full sm:w-auto"
+            className="w-full"
             onClick={() => save(true)}
           >
             Sugerir ingredientes
           </Button>
+          <p className="text-sm text-text-muted">
+            Si sugerís, revisá las cantidades antes de usarlas.
+          </p>
         </div>
       </form>
     </div>

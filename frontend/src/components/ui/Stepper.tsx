@@ -15,7 +15,7 @@ export function Stepper({
     <div className="flex items-center gap-2">
       <button
         type="button"
-        className="grid size-11 place-items-center rounded-card border border-border bg-surface text-lg font-semibold text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-40"
+        className="grid size-11 place-items-center rounded-card border border-text/35 bg-surface text-lg font-semibold text-text transition-colors hover:border-brand-primary hover:bg-brand-accent/55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-40"
         aria-label={`Menos ${label}`}
         disabled={value <= min}
         onClick={() => onChange(value - 1)}
@@ -30,7 +30,7 @@ export function Stepper({
       </span>
       <button
         type="button"
-        className="grid size-11 place-items-center rounded-card border border-border bg-surface text-lg font-semibold text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-40"
+        className="grid size-11 place-items-center rounded-card border border-text/35 bg-surface text-lg font-semibold text-text transition-colors hover:border-brand-primary hover:bg-brand-accent/55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-40"
         aria-label={`Más ${label}`}
         disabled={value >= max}
         onClick={() => onChange(value + 1)}

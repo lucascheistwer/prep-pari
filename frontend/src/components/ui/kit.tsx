@@ -5,6 +5,7 @@ import {
   type ReactElement,
   type ReactNode,
   type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
 } from "react";
 
 const control =
@@ -69,6 +70,28 @@ export function SelectInput({
   );
 }
 
+export function TextArea({
+  className = "",
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea className={`${control} min-h-24 py-2 ${className}`} {...props} />;
+}
+
+export function selectableClass(
+  active: boolean,
+  options?: { shape?: "pill" | "card"; block?: boolean },
+) {
+  const shape = options?.shape ?? "pill";
+  const radius = shape === "pill" ? "rounded-full" : "rounded-card";
+  const layout = options?.block
+    ? "flex w-full justify-start text-left"
+    : "inline-flex justify-center";
+  const state = active
+    ? "border-brand-primary bg-brand-accent text-text"
+    : "border-text/35 bg-surface text-text hover:border-brand-primary hover:bg-brand-accent/45";
+  return `${layout} min-h-11 shrink-0 items-center gap-2 border px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${radius} ${state}`;
+}
+
 export function Card({
   children,
   className = "",
@@ -94,14 +117,20 @@ export function Chip({
   active?: boolean;
   onClick?: () => void;
 }) {
-  const className = `inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
-    active ? "bg-brand-primary text-white" : "bg-surface text-text border border-border"
-  }`;
   if (!onClick) {
-    return <span className={`${className} bg-brand-accent text-text`}>{children}</span>;
+    return (
+      <span className="inline-flex min-h-8 items-center rounded-full bg-brand-accent px-3 text-sm font-semibold text-text">
+        {children}
+      </span>
+    );
   }
   return (
-    <button type="button" className={className} aria-pressed={active} onClick={onClick}>
+    <button
+      type="button"
+      className={selectableClass(active)}
+      aria-pressed={active}
+      onClick={onClick}
+    >
       {children}
     </button>
   );

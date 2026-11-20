@@ -1,8 +1,40 @@
 import { RECIPES, suggestIngredients } from "@/domain/recipes";
 import { buildRequirements, entriesForWeek, reconcileItems } from "@/domain/shopping";
 import { normalizeIngredientName } from "@/domain/text";
-import type { Dish, ShoppingItem, ShoppingList, Snapshot } from "@/domain/types";
+import type {
+  Dish,
+  MealEntry,
+  ShoppingItem,
+  ShoppingList,
+  Snapshot,
+} from "@/domain/types";
 import { addDays, weekStartIso } from "@/domain/week";
+
+export const SEEDED_DISH_IDS = new Set([
+  "dish-milanesas-con-pure",
+  "dish-tarta-de-verduras",
+  "dish-noquis-de-papa",
+  "dish-pollo-al-horno-con-papas",
+  "dish-ensalada-completa",
+  "dish-sopa-de-lentejas",
+  "dish-sandwich-de-milanesa",
+  "dish-arroz-con-atun",
+]);
+
+export const SEEDED_ENTRY_IDS = new Set([
+  "entry-mon-lunch",
+  "entry-mon-dinner",
+  "entry-tue-lunch",
+  "entry-wed-dinner",
+  "entry-thu-lunch",
+  "entry-thu-dinner",
+  "entry-fri-lunch",
+  "entry-fri-dinner",
+  "entry-sat-dinner",
+  "entry-sun-lunch",
+]);
+
+export const SEEDED_ITEM_IDS = new Set(["manual-papel", "manual-huevo"]);
 
 const CONFIRMED = new Set([
   "milanesas con pure",
@@ -25,6 +57,7 @@ function dishFromRecipe(key: string, favorite: boolean): Dish {
   return {
     id: `dish-${key.replace(/\s+/g, "-")}`,
     title: titleFromKey(key),
+    description: null,
     category: suggested.category ?? recipe.category,
     baseServings: recipe.baseServings,
     pieceCount: recipe.pieceCount,
@@ -56,6 +89,7 @@ function emptyDish(): Dish {
   return {
     id: "dish-arroz-con-atun",
     title: "Arroz con atún",
+    description: null,
     category: "ARROCES_Y_CEREALES",
     baseServings: 2,
     pieceCount: null,
@@ -172,6 +206,48 @@ export function buildSeed(today: string): Snapshot {
     incompleteDishIds,
   };
   return { dishes, entries, lists: [list], cooksFor: 4 };
+}
+
+export function emptyKitchen(): Snapshot {
+  return { dishes: [], entries: [], lists: [], cooksFor: 4 };
+}
+
+export function stripSeededContent(snapshot: Snapshot): Snapshot {
+  const dishes = (snapshot.dishes ?? []).filter(
+    (dish) => dish && !SEEDED_DISH_IDS.has(dish.id),
+  );
+  const dishIds = new Set(dishes.map((dish) => dish.id));
+  const cooksFor =
+    Number.isInteger(snapshot.cooksFor) &&
+    snapshot.cooksFor >= 1 &&
+    snapshot.cooksFor <= 30
+      ? snapshot.cooksFor
+      : 4;
+  const entries = ((snapshot.entries ?? []) as MealEntry[])
+    .filter(
+      (entry) => entry && !SEEDED_ENTRY_IDS.has(entry.id) && dishIds.has(entry.dishId),
+    )
+    .map((entry) => ({ ...entry, servings: cooksFor }));
+  const lists = (snapshot.lists ?? [])
+    .map((list) => ({
+      ...list,
+      incompleteDishIds: (list.incompleteDishIds ?? []).filter((id) => dishIds.has(id)),
+      items: (list.items ?? []).filter(
+        (item) => item && !SEEDED_ITEM_IDS.has(item.id) && !item.id.startsWith("gen-"),
+      ),
+    }))
+    .filter((list) => list.items.length > 0);
+  if (dishes.length > 0) {
+    return { dishes, entries, lists, cooksFor };
+  }
+  const manuals = lists
+    .map((list) => ({
+      ...list,
+      incompleteDishIds: [],
+      items: list.items.filter((item) => item.origin === "MANUAL"),
+    }))
+    .filter((list) => list.items.length > 0);
+  return { dishes: [], entries: [], lists: manuals, cooksFor };
 }
 
 function existingManuals(): ShoppingItem[] {
