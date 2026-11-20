@@ -9,7 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test src/design/tokens.test.mjs"
+    "test": "node --import tsx --test src/design/tokens.test.mjs src/domain/*.test.ts src/domain/*.test.tsx"
   },
   "dependencies": {
     "next": "16.4.6",
@@ -26,6 +26,7 @@
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.10.1",
     "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
     "typescript": "5.9.3"
   },
   "engines": {
