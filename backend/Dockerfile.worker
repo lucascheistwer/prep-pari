@@ -1,0 +1,18 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS build
+WORKDIR /src
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package
+
+FROM eclipse-temurin:21.0.9_10-jre-jammy
+RUN useradd --create-home --uid 10001 preppari
+WORKDIR /app
+COPY --from=build /src/target/app.jar /app/app.jar
+COPY docker/worker-entrypoint.sh /app/entrypoint.sh
+RUN chmod 755 /app/entrypoint.sh
+USER preppari
+ENV PREPPARI_RUNTIME_MODE=worker
+STOPSIGNAL SIGTERM
+HEALTHCHECK --interval=20s --timeout=5s --start-period=120s --retries=3 \
+    CMD sh -c 'f=/tmp/preppari-worker-heartbeat; test -f "$f" && test $(( $(date +%s) - $(stat -c %Y "$f") )) -lt 40'
+ENTRYPOINT ["/app/entrypoint.sh"]

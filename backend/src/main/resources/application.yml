@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: preppari
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/preppari}
+    username: ${SPRING_DATASOURCE_USERNAME:preppari}
+    password: ${SPRING_DATASOURCE_PASSWORD:preppari}
+    hikari:
+      maximum-pool-size: ${PREPPARI_DB_POOL_SIZE:5}
+  flyway:
+    enabled: ${PREPPARI_RUN_MIGRATIONS:false}
+    locations: classpath:db/migration
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+preppari:
+  runtime:
+    mode: ${PREPPARI_RUNTIME_MODE:api}
+  ai:
+    provider: ${PREPPARI_AI_PROVIDER:fake}
+    text-model: ${PREPPARI_AI_TEXT_MODEL:}
+    image-model: ${PREPPARI_AI_IMAGE_MODEL:}
+    image-generation-enabled: ${PREPPARI_AI_IMAGE_ENABLED:false}
+  worker:
+    batch-size: ${PREPPARI_WORKER_BATCH_SIZE:5}
+    lease: ${PREPPARI_WORKER_LEASE:60s}
+    min-poll-interval: 2s
+    max-poll-interval: 15s
+    shutdown-timeout: 20s
+    heartbeat-path: ${PREPPARI_WORKER_HEARTBEAT_PATH:/tmp/preppari-worker-heartbeat}
+    retry-delays:
+      - 5s
+      - 30s
+      - 2m
+      - 10m
+      - 30m

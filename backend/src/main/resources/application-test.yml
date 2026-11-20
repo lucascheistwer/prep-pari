@@ -1,0 +1,14 @@
+spring:
+  flyway:
+    enabled: true
+
+preppari:
+  runtime:
+    mode: api
+  ai:
+    provider: fake
+
+logging:
+  level:
+    com.preppari: INFO
+    org.testcontainers: INFO

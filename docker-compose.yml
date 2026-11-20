@@ -1,0 +1,83 @@
+# Entorno local de PrepPari. Redis queda levantado para Pub/Sub futuro;
+# la aplicación todavía no se conecta. No hay broker de trabajos.
+
+services:
+  postgres:
+    image: postgres:16.16-alpine
+    environment:
+      POSTGRES_DB: preppari
+      POSTGRES_USER: preppari
+      POSTGRES_PASSWORD: preppari
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U preppari -d preppari"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4.12-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8080"
+      PREPPARI_RUNTIME_MODE: api
+      PREPPARI_RUN_MIGRATIONS: "true"
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/preppari
+      SPRING_DATASOURCE_USERNAME: preppari
+      SPRING_DATASOURCE_PASSWORD: preppari
+      PREPPARI_DB_POOL_SIZE: "5"
+      PREPPARI_AI_PROVIDER: fake
+      PREPPARI_AI_TEXT_MODEL: ""
+      PREPPARI_AI_IMAGE_MODEL: ""
+      PREPPARI_AI_IMAGE_ENABLED: "false"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    environment:
+      PREPPARI_RUNTIME_MODE: worker
+      PREPPARI_RUN_MIGRATIONS: "false"
+      SPRING_PROFILES_ACTIVE: worker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/preppari
+      SPRING_DATASOURCE_USERNAME: preppari
+      SPRING_DATASOURCE_PASSWORD: preppari
+      PREPPARI_DB_POOL_SIZE: "5"
+      PREPPARI_AI_PROVIDER: fake
+      PREPPARI_WORKER_ID: worker-local
+    depends_on:
+      api:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

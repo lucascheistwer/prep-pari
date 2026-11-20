@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* Identidad Tomato & Butter. No reutilizar la paleta de Mi Cucha. */
+@theme {
+  --color-brand-primary: #b94735;
+  --color-brand-primary-hover: #9e3d2f;
+  --color-brand-accent: #f0d58a;
+  --color-brand-warm: #ddae99;
+  --color-background: #fff7e9;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #fbf3e8;
+  --color-text: #453b35;
+  --color-text-muted: #756a62;
+  --color-border: #e9ded1;
+  --color-success: #39785a;
+  --color-warning: #9a681c;
+  --color-danger: #b33e32;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --radius-card: 12px;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
