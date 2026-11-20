@@ -1,4 +1,7 @@
-.PHONY: up down test backend-test frontend-test
+.PHONY: up down test backend-test frontend-test api
+
+api:
+	bash -c 'set -a; [ -f .env ] && . ./.env; set +a; cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=local'
 
 up:
 	docker compose up --build

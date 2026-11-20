@@ -2,7 +2,7 @@
 
 PrepPari organiza las comidas de un hogar: guardar lo que se cocina, planificar almuerzos y cenas, y armar una lista de compras compartida. La interfaz está en español (Argentina).
 
-Este repositorio está en la **Fase 0**. Hay estructura, convenciones, base de datos, cola de trabajos y la identidad visual Tomato & Butter. Todavía no hay cuentas, hogares, comidas, planificador ni lista.
+Este repositorio está en la **Fase 1**. Hay cuentas con Google, hogares, invitaciones y la identidad visual Tomato & Butter. Todavía no hay comidas, planificador ni lista.
 
 La fuente de verdad del producto es [docs/PRD.md](docs/PRD.md). Las decisiones de esta fase están en [docs/decisions](docs/decisions).
 
@@ -33,7 +33,7 @@ docker compose up --build
 
 | Servicio | URL o puerto | Qué hace |
 |---|---|---|
-| Frontend | http://localhost:3000 | Página base con los tokens Tomato & Butter |
+| Frontend | http://localhost:3000 | Login, alta de hogar e invitaciones |
 | API | http://localhost:8080/api/health | Salud pública. Actuator en `/actuator/health` |
 | Worker | sin puerto | Reclama jobs de PostgreSQL. No abre HTTP |
 | PostgreSQL | localhost:5432 | Base `preppari`, usuario y clave locales `preppari` |
@@ -50,12 +50,17 @@ docker compose up postgres redis
 cp .env.example .env
 ```
 
-API, en una terminal:
+Maven no lee el `.env` de la raíz. Hay que cargarlo en el entorno del proceso, desde la raíz del repo:
 
 ```bash
+set -a
+. ./.env
+set +a
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
+
+Sin ese `source`, `GOOGLE_CLIENT_ID` no llega y `/api/v1/auth/config` responde `googleClientId: null`. `make api` hace la carga y el arranque.
 
 Worker, en otra. Hay que esperar a que la API haya migrado:
 
@@ -74,7 +79,22 @@ npm ci
 npm run dev
 ```
 
-Queda en http://localhost:3000. El perfil `local` de la API permite CORS desde ese origen.
+Queda en http://localhost:3000. El navegador habla con Next y Next reenvía `/api` a la API (`API_URL`, por defecto `http://localhost:8080`). La sesión viaja en una cookie `HttpOnly`. El perfil `local` de la API también permite CORS desde ese origen.
+
+## Entrar
+
+Hay dos maneras. Las dos terminan en la misma cuenta interna, identificada por el subject del proveedor.
+
+**Google, en local.** En [Google Cloud](https://console.cloud.google.com/apis/credentials) el cliente web tiene que tener:
+
+- Origen de JavaScript autorizado: `http://localhost:3000`
+- El redirect `http://localhost:3000/auth/callback/google` puede quedar cargado, pero este flujo no lo usa: Google Identity Services devuelve el ID token en el navegador.
+
+Copiá `.env.example` a `.env` y dejá `GOOGLE_CLIENT_ID`. `GOOGLE_CLIENT_SECRET` queda vacía: no hace falta y la aplicación no la lee. Levantá la API con el perfil `local` y el frontend, abrí http://localhost:3000/ingresar y usá el botón de Google.
+
+**Sin Google.** En los perfiles `local` y `test` la pantalla tiene «Entrar sin Google». El nombre se usa para volver a entrar como la misma persona. En `production` ese ingreso no existe y, si alguien lo enciende, la API no arranca.
+
+Con una cuenta, creá un hogar, generá un enlace y abrilo con otra cuenta (otra ventana en modo desarrollo, u otra cuenta de Google) para aceptar la invitación.
 
 ## Tests y formato
 
@@ -91,9 +111,11 @@ Los tests de la cola usan Testcontainers con PostgreSQL 16.16. Hace falta Docker
 
 ## Configuración
 
-`.env.example` no tiene secretos. El proveedor de IA por defecto es `fake`. En esta fase cualquier otro valor impide el arranque. Los nombres de modelo salen de `PREPPARI_AI_TEXT_MODEL` y `PREPPARI_AI_IMAGE_MODEL`; si están vacíos, no se inventa uno.
+`.env.example` no tiene secretos. El proveedor de IA por defecto es `fake`. Cualquier otro valor impide el arranque. Los nombres de modelo salen de `PREPPARI_AI_TEXT_MODEL` y `PREPPARI_AI_IMAGE_MODEL`; si están vacíos, no se inventa uno.
 
 `PREPPARI_AI_API_KEY` está reservada y el proceso no la lee.
+
+`GOOGLE_CLIENT_ID` es el Client ID público. `GOOGLE_CLIENT_SECRET` queda vacía a propósito. `PREPPARI_SESSION_SECRET` firma la cookie de sesión; en local hay un valor de desarrollo y en producción hay que definir uno distinto de al menos 32 bytes. El detalle está en [docs/decisions/0007-identidad-google-e-invitaciones.md](docs/decisions/0007-identidad-google-e-invitaciones.md).
 
 Las migraciones no corren en cada instancia. En local las corre la API (`PREPPARI_RUN_MIGRATIONS=true`). En producción tienen que ser un paso de release, con el worker y las réplicas de la API en `false`.
 
@@ -105,12 +127,12 @@ Las migraciones no corren en cada instancia. En local las corre la API (`PREPPAR
 
 Estas elecciones no bloquean la Fase 0 y tienen que tomarlas Lucas antes de las fases que las usan:
 
-- Proveedor OIDC y cuentas (Vercel, base de datos, Redis, storage, IA).
+- Cuentas de Vercel, base de datos, Redis, storage e IA. El proveedor OIDC de esta fase es Google.
 - Dónde vive PostgreSQL (por ejemplo Neon o Supabase) y en qué región. El daemon de ejemplo usa `iad1`.
 - Redis administrado para Pub/Sub (por ejemplo Upstash).
 - Object storage: Vercel Blob o un S3 compatible.
 - Proveedor y modelo de texto, y proveedor y modelo de imagen. Van por ambiente, no en el código.
-- Invitaciones por link, por email, o por los dos.
+- La invitación de esta fase es un enlace de un solo uso, sin email.
 - Límites de imágenes y de uso de IA, y la política de borrado de cuenta.
 
 No hay que sumar microservicios ni otro broker.

@@ -14,6 +14,7 @@ Leé [docs/PRD.md](docs/PRD.md) antes de implementar y respetá el alcance del M
 10. El nombre visible es PrepPari. En slugs, paquetes y URLs usá `preppari`.
 11. Los trabajos durables van a `background_job` en PostgreSQL, con un worker separado. Redis es solo Pub/Sub. No sumes otro broker.
 12. Escribí tests de las reglas de negocio: porciones, consolidación, listas, aislamiento entre hogares y concurrencia de jobs.
+13. En la UI no expliques detalles internos ni técnicos: modo desarrollo, cookies, tokens, ambientes, proveedores o cómo está implementado algo. El usuario ve textos de producto, breves. Si hace falta un ingreso de desarrollo, es un control discreto y sin cartel.
 
 La Fase 0 ya está hecha. Lo que sigue es la Fase 1 del PRD, no un rediseño del bootstrap.
 

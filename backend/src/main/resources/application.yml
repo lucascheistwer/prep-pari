@@ -37,6 +37,16 @@ preppari:
     text-model: ${PREPPARI_AI_TEXT_MODEL:}
     image-model: ${PREPPARI_AI_IMAGE_MODEL:}
     image-generation-enabled: ${PREPPARI_AI_IMAGE_ENABLED:false}
+  auth:
+    dev-login-enabled: false
+    session-secret: ${PREPPARI_SESSION_SECRET:}
+    session-ttl: ${PREPPARI_SESSION_TTL:7d}
+    cookie-secure: false
+    public-origin: ${PREPPARI_PUBLIC_ORIGIN:http://localhost:3000}
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+      jwk-set-uri: ${GOOGLE_JWK_SET_URI:https://www.googleapis.com/oauth2/v3/certs}
+      verifier: google
   worker:
     batch-size: ${PREPPARI_WORKER_BATCH_SIZE:5}
     lease: ${PREPPARI_WORKER_LEASE:60s}

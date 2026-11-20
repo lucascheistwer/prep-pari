@@ -8,6 +8,9 @@ preppari:
     mode: api
   ai:
     provider: fake
+  auth:
+    dev-login-enabled: true
+    session-secret: ${PREPPARI_SESSION_SECRET:local-dev-session-secret-not-for-production-00}
 
 logging:
   level:

@@ -45,6 +45,9 @@ services:
       PREPPARI_AI_TEXT_MODEL: ""
       PREPPARI_AI_IMAGE_MODEL: ""
       PREPPARI_AI_IMAGE_ENABLED: "false"
+      PREPPARI_PUBLIC_ORIGIN: http://localhost:3000
+      PREPPARI_SESSION_SECRET: ${PREPPARI_SESSION_SECRET:-local-dev-session-secret-not-for-production-00}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "8080:8080"
     depends_on:
@@ -76,6 +79,7 @@ services:
     environment:
       PORT: "3000"
       HOSTNAME: 0.0.0.0
+      API_URL: http://api:8080
     ports:
       - "3000:3000"
 

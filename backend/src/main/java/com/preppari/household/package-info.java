@@ -1,2 +1,2 @@
-/** Hogares, membresías e invitaciones. Llegan en la Fase 1. */
+/** Hogares, membresías e invitaciones. */
 package com.preppari.household;

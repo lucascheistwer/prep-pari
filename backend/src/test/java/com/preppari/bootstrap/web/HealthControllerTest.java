@@ -6,10 +6,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(HealthController.class)
+@WebMvcTest(
+    controllers = HealthController.class,
+    excludeAutoConfiguration = {
+      SecurityAutoConfiguration.class,
+      UserDetailsServiceAutoConfiguration.class,
+      SecurityFilterAutoConfiguration.class,
+      ServletWebSecurityAutoConfiguration.class
+    })
 class HealthControllerTest {
 
   @Autowired private MockMvc mockMvc;

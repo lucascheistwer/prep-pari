@@ -13,4 +13,5 @@ PrepPari es un monolito modular hexagonal (Next.js + Spring Boot). No crear micr
 - Nombre visible: PrepPari. Slugs y paquetes: preppari.
 - Trabajos durables en `background_job`, claim con `FOR UPDATE SKIP LOCKED`, worker en proceso separado.
 - Si falta una decisión, elegir lo más simple, documentarlo en `docs/decisions` y no ampliar el MVP.
+- En la UI no mostrar textos sobre detalles internos o técnicos. El copy es de producto y breve. Un ingreso de desarrollo, si existe, es un control discreto y sin explicación.
 - La fuente de verdad es `docs/PRD.md`.
