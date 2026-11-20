@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ScaledIngredients } from "@/components/dishes/ScaledIngredients";
-import { Button } from "@/components/ui/Button";
+import { buttonClass, iconButtonClass, Button } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Icon } from "@/components/ui/Icon";
-import { Card, Notice, TextInput } from "@/components/ui/kit";
-import { Stepper } from "@/components/ui/Stepper";
+import {
+  Card,
+  EmptyState,
+  Notice,
+  selectableClass,
+  TextInput,
+} from "@/components/ui/kit";
 import { useKitchen } from "@/data/kitchen-context";
-import { moveEntry, removeEntry, setEntry, setServings } from "@/data/kitchen-store";
+import { moveEntry, removeEntry, setEntry } from "@/data/kitchen-store";
 import { mealLabel } from "@/domain/labels";
 import type { Dish, MealEntry, MealType } from "@/domain/types";
 import {
@@ -35,65 +41,79 @@ export function PlannerScreen() {
       <div>
         <h1 className="font-display text-3xl text-text">Plan de la semana</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Almuerzo y cena, de lunes a domingo.
+          Elegí el almuerzo y la cena de cada día.
         </p>
       </div>
       <WeekBar start={start} onChange={setStart} />
       {message ? <Notice tone="info">{message}</Notice> : null}
-      <div className="space-y-4 lg:hidden">
-        {days.map((date) => (
-          <DayColumn
-            key={date}
-            date={date}
-            today={today}
-            entries={snapshot.entries}
-            dishes={snapshot.dishes}
-            open={open}
-            onOpen={setOpen}
-            onPick={(mealType) => {
-              setMessage(null);
-              setPicker({ date, mealType });
-            }}
-            onMove={(entryId) => {
-              setMessage(null);
-              setMoving(entryId);
-            }}
-            onServings={(entryId, servings) => setServings(entryId, servings)}
-            onRemove={removeEntry}
-          />
-        ))}
-      </div>
-      <div className="hidden gap-2 lg:grid lg:grid-cols-7">
-        {days.map((date) => (
-          <DayColumn
-            key={`desk-${date}`}
-            date={date}
-            today={today}
-            entries={snapshot.entries}
-            dishes={snapshot.dishes}
-            open={open}
-            onOpen={setOpen}
-            compact
-            onPick={(mealType) => {
-              setMessage(null);
-              setPicker({ date, mealType });
-            }}
-            onMove={(entryId) => {
-              setMessage(null);
-              setMoving(entryId);
-            }}
-            onServings={(entryId, servings) => setServings(entryId, servings)}
-            onRemove={removeEntry}
-          />
-        ))}
-      </div>
+      {snapshot.dishes.length === 0 ? (
+        <EmptyState
+          title="Primero, una comida"
+          text="Guardá lo que suelen cocinar. Después lo ponés en el almuerzo o la cena."
+          action={<ButtonLink href="/comidas/nueva">Agregar comida</ButtonLink>}
+        />
+      ) : (
+        <>
+          <div className="space-y-4 lg:hidden">
+            {days.map((date) => (
+              <DayColumn
+                key={date}
+                date={date}
+                today={today}
+                entries={snapshot.entries}
+                dishes={snapshot.dishes}
+                open={open}
+                onOpen={setOpen}
+                onPick={(mealType) => {
+                  setMessage(null);
+                  setPicker({ date, mealType });
+                }}
+                onMove={(entryId) => {
+                  setMessage(null);
+                  setMoving(entryId);
+                }}
+                cooksFor={snapshot.cooksFor}
+                onRemove={removeEntry}
+              />
+            ))}
+          </div>
+          <div className="hidden gap-2 lg:grid lg:grid-cols-7">
+            {days.map((date) => (
+              <DayColumn
+                key={`desk-${date}`}
+                date={date}
+                today={today}
+                entries={snapshot.entries}
+                dishes={snapshot.dishes}
+                open={open}
+                onOpen={setOpen}
+                compact
+                onPick={(mealType) => {
+                  setMessage(null);
+                  setPicker({ date, mealType });
+                }}
+                onMove={(entryId) => {
+                  setMessage(null);
+                  setMoving(entryId);
+                }}
+                cooksFor={snapshot.cooksFor}
+                onRemove={removeEntry}
+              />
+            ))}
+          </div>
+        </>
+      )}
       {picker ? (
         <DishPicker
+          date={picker.date}
+          mealType={picker.mealType}
           dishes={snapshot.dishes}
-          initialServings={snapshot.cooksFor}
           onClose={() => setPicker(null)}
-          onChoose={(dishId, servings) => {
-            setEntry({ ...picker, dishId, servings });
+          onChoose={(dishId) => {
+            const result = setEntry({ ...picker, dishId });
+            if (!result.ok) {
+              setMessage(result.message);
+            }
             setPicker(null);
           }}
         />
@@ -131,7 +151,7 @@ function WeekBar({
       <button
         type="button"
         aria-label="Semana anterior"
-        className="grid size-11 place-items-center rounded-card border border-border bg-surface"
+        className={iconButtonClass()}
         onClick={() => onChange(addDays(start, -7))}
       >
         <Icon name="chevronLeft" />
@@ -140,7 +160,7 @@ function WeekBar({
       <button
         type="button"
         aria-label="Semana siguiente"
-        className="grid size-11 place-items-center rounded-card border border-border bg-surface"
+        className={iconButtonClass()}
         onClick={() => onChange(addDays(start, 7))}
       >
         <Icon name="chevronRight" />
@@ -159,7 +179,7 @@ function DayColumn({
   onOpen,
   onPick,
   onMove,
-  onServings,
+  cooksFor,
   onRemove,
 }: {
   date: string;
@@ -171,7 +191,7 @@ function DayColumn({
   onOpen: (id: string | null) => void;
   onPick: (mealType: MealType) => void;
   onMove: (entryId: string) => void;
-  onServings: (entryId: string, servings: number) => void;
+  cooksFor: number;
   onRemove: (entryId: string) => void;
 }) {
   return (
@@ -203,56 +223,48 @@ function DayColumn({
                 >
                   {dish.title}
                 </Link>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-text-muted">Para cuántos</span>
-                  <Stepper
-                    value={entry.servings}
-                    label={`para cuántos, ${dish.title}`}
-                    onChange={(servings) => onServings(entry.id, servings)}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
                     type="button"
-                    className="min-h-11 text-sm font-semibold text-brand-primary"
+                    variant="secondary"
                     onClick={() => onPick(mealType)}
                   >
                     Cambiar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="min-h-11 text-sm font-semibold text-text"
+                    variant="secondary"
                     onClick={() => onMove(entry.id)}
                   >
                     Mover
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="min-h-11 text-sm font-semibold text-text"
+                    variant="secondary"
                     onClick={() => onOpen(open === entry.id ? null : entry.id)}
                   >
                     {open === entry.id ? "Ocultar" : "Ingredientes"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="min-h-11 text-sm font-semibold text-danger"
+                    variant="danger"
                     onClick={() => onRemove(entry.id)}
                   >
                     Quitar
-                  </button>
+                  </Button>
                 </div>
                 {open === entry.id ? (
                   <ScaledIngredients
                     ingredients={dish.ingredients}
                     baseServings={dish.baseServings}
-                    servings={entry.servings}
+                    servings={cooksFor}
                   />
                 ) : null}
               </>
             ) : (
               <button
                 type="button"
-                className="flex min-h-14 w-full items-center justify-center rounded-card border border-dashed border-border text-sm font-semibold text-text"
+                className={buttonClass("secondary", "w-full !min-h-14")}
                 onClick={() => onPick(mealType)}
               >
                 Elegir {mealLabel(mealType).toLowerCase()}
@@ -266,19 +278,20 @@ function DayColumn({
 }
 
 function DishPicker({
+  date,
+  mealType,
   dishes,
-  initialServings,
   onClose,
   onChoose,
 }: {
+  date: string;
+  mealType: MealType;
   dishes: { id: string; title: string }[];
-  initialServings: number;
   onClose: () => void;
-  onChoose: (dishId: string, servings: number) => void;
+  onChoose: (dishId: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [dishId, setDishId] = useState<string | null>(null);
-  const [servings, setServings] = useState(initialServings);
   const visible = useMemo(
     () =>
       dishes.filter((dish) =>
@@ -296,58 +309,70 @@ function DishPicker({
       aria-labelledby="elegir-titulo"
     >
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <h2 id="elegir-titulo" className="font-display text-2xl text-text">
-            Elegir comida
-          </h2>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 id="elegir-titulo" className="font-display text-2xl text-text">
+              Elegir {mealLabel(mealType).toLowerCase()}
+            </h2>
+            <p className="text-sm text-text-muted">{dayHeading(date)}</p>
+          </div>
           <button
             type="button"
-            className="grid size-11 place-items-center"
+            className={iconButtonClass()}
             aria-label="Cerrar"
             onClick={onClose}
           >
             <Icon name="close" />
           </button>
         </div>
-        <TextInput
-          aria-label="Buscar comida"
-          value={query}
-          placeholder="Buscar"
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <ul className="space-y-2">
-          {visible.map((dish) => (
-            <li key={dish.id}>
-              <button
-                type="button"
-                aria-pressed={dish.id === dishId}
-                className={`flex min-h-14 w-full items-center rounded-card border px-3 text-left text-sm font-semibold ${
-                  dish.id === dishId
-                    ? "border-brand-primary bg-brand-accent/40"
-                    : "border-border bg-surface"
-                }`}
-                onClick={() => setDishId(dish.id)}
-              >
-                {dish.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {chosen ? (
-          <div className="mt-auto space-y-3 pb-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">Para cuántos</p>
-              <Stepper value={servings} onChange={setServings} label="para cuántos" />
-            </div>
-            <Button
-              type="button"
-              className="w-full"
-              onClick={() => onChoose(chosen.id, servings)}
-            >
-              Poner en el plan
-            </Button>
-          </div>
-        ) : null}
+        {dishes.length === 0 ? (
+          <EmptyState
+            title="Todavía no hay comidas"
+            text="Guardá una y volvé a elegirla para este día."
+            action={<ButtonLink href="/comidas/nueva">Agregar comida</ButtonLink>}
+          />
+        ) : (
+          <>
+            <TextInput
+              aria-label="Buscar comida"
+              value={query}
+              placeholder="Buscar"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            {visible.length === 0 ? (
+              <p className="text-sm text-text-muted">Ninguna comida coincide.</p>
+            ) : (
+              <ul className="space-y-2">
+                {visible.map((dish) => (
+                  <li key={dish.id}>
+                    <button
+                      type="button"
+                      aria-pressed={dish.id === dishId}
+                      className={selectableClass(dish.id === dishId, {
+                        shape: "card",
+                        block: true,
+                      })}
+                      onClick={() => setDishId(dish.id)}
+                    >
+                      {dish.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {chosen ? (
+              <div className="mt-auto pb-4">
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={() => onChoose(chosen.id)}
+                >
+                  Poner en el plan
+                </Button>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
     </div>
   );
@@ -380,7 +405,7 @@ function MoveSheet({
           </h2>
           <button
             type="button"
-            className="grid size-11 place-items-center"
+            className={iconButtonClass()}
             aria-label="Cerrar"
             onClick={onClose}
           >
@@ -404,7 +429,7 @@ function MoveSheet({
                       key={mealType}
                       type="button"
                       disabled={occupied}
-                      className="min-h-11 rounded-card border border-border bg-surface text-sm font-semibold disabled:opacity-40"
+                      className={buttonClass("secondary", "w-full")}
                       onClick={() => onMove(date, mealType)}
                     >
                       {occupied ? "Ya hay una" : mealLabel(mealType)}

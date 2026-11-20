@@ -5,7 +5,7 @@ import { useState } from "react";
 import { DishVisual } from "@/components/dishes/DishVisual";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Icon } from "@/components/ui/Icon";
-import { Card, Chip, EmptyState, TextInput } from "@/components/ui/kit";
+import { Card, Chip, EmptyState, selectableClass, TextInput } from "@/components/ui/kit";
 import { useKitchen } from "@/data/kitchen-context";
 import { updateDish } from "@/data/kitchen-store";
 import { dishStatusLabel, filterDishes } from "@/domain/dishes";
@@ -20,48 +20,67 @@ export function LibraryScreen() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-display text-3xl text-text">Mis comidas</h1>
-          <p className="mt-1 text-sm text-text-muted">Las comidas que hacen en casa.</p>
+          <p className="mt-1 text-sm text-text-muted">
+            Las que van a aparecer cuando armes la semana.
+          </p>
         </div>
-        <ButtonLink href="/comidas/nueva" className="shrink-0">
+        <ButtonLink href="/comidas/nueva" className="w-full shrink-0 sm:w-auto">
           Agregar comida
         </ButtonLink>
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="buscar-comida" className="block text-sm font-semibold text-text">
-          Buscar
-        </label>
-        <div className="relative">
-          <Icon
-            name="search"
-            className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-text-muted"
-          />
-          <TextInput
-            id="buscar-comida"
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="Nombre o ingrediente"
-            className="pl-10"
-          />
-        </div>
-      </div>
+      {dishes.length > 0 ? (
+        <>
+          <div className="space-y-1">
+            <label
+              htmlFor="buscar-comida"
+              className="block text-sm font-semibold text-text"
+            >
+              Buscar
+            </label>
+            <div className="relative">
+              <Icon
+                name="search"
+                className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-text-muted"
+              />
+              <TextInput
+                id="buscar-comida"
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                placeholder="Nombre o ingrediente"
+                className="pl-10"
+              />
+            </div>
+          </div>
 
-      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-        <Chip active={category === "ALL"} onClick={() => setCategory("ALL")}>
-          Todas
-        </Chip>
-        <Chip active={category === "FAVORITES"} onClick={() => setCategory("FAVORITES")}>
-          Favoritas
-        </Chip>
-        {DISH_CATEGORIES.map((item) => (
-          <Chip key={item} active={category === item} onClick={() => setCategory(item)}>
-            {DISH_CATEGORY_LABELS[item]}
-          </Chip>
-        ))}
-      </div>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-text">Filtrar</p>
+            <div className="flex flex-wrap gap-2.5">
+              <Chip active={category === "ALL"} onClick={() => setCategory("ALL")}>
+                Todas
+              </Chip>
+              <Chip
+                active={category === "FAVORITES"}
+                onClick={() => setCategory("FAVORITES")}
+              >
+                Favoritas
+              </Chip>
+              {DISH_CATEGORIES.map((item) => (
+                <Chip
+                  key={item}
+                  active={category === item}
+                  onClick={() => setCategory(item)}
+                >
+                  {DISH_CATEGORY_LABELS[item]}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {visible.length === 0 ? (
         <EmptyState
@@ -70,8 +89,8 @@ export function LibraryScreen() {
           }
           text={
             dishes.length === 0
-              ? "Con el nombre alcanza para guardar la primera."
-              : "Probá con otro nombre o sacá el filtro."
+              ? "Guardá la primera. Con el nombre alcanza, y después la usás en la semana."
+              : "Probá con otro nombre o elegí Todas."
           }
           action={
             dishes.length === 0 ? (
@@ -96,6 +115,11 @@ export function LibraryScreen() {
                   />
                   <div className="space-y-1 p-3">
                     <h2 className="text-base font-semibold text-text">{dish.title}</h2>
+                    {dish.description ? (
+                      <p className="line-clamp-2 text-sm text-text-muted">
+                        {dish.description}
+                      </p>
+                    ) : null}
                     <p className="text-sm text-text-muted">
                       {DISH_CATEGORY_LABELS[dish.category]} · {dishStatusLabel(dish)}
                     </p>
@@ -106,7 +130,7 @@ export function LibraryScreen() {
                     type="button"
                     aria-pressed={dish.favorite}
                     onClick={() => updateDish(dish.id, { favorite: !dish.favorite })}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-card px-2 text-sm font-semibold text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+                    className={selectableClass(dish.favorite)}
                   >
                     <Icon
                       name="heart"

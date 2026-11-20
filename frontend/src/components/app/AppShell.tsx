@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Icon } from "@/components/ui/Icon";
+import { selectableClass } from "@/components/ui/kit";
 
 const items = [
   { href: "/inicio", label: "Inicio", icon: "home" },
@@ -35,21 +36,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             href="/casa"
             aria-current={pathname === "/casa" ? "page" : undefined}
-            className={`inline-flex min-h-11 items-center rounded-card px-3 text-sm font-semibold md:hidden ${
-              pathname === "/casa" ? "text-brand-primary" : "text-text"
-            }`}
+            className={`${selectableClass(pathname === "/casa")} md:hidden`}
           >
             La casa
           </Link>
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Secciones">
+          <nav className="hidden items-center gap-2 md:flex" aria-label="Secciones">
             <Link
               href="/casa"
               aria-current={active(pathname, "/casa") ? "page" : undefined}
-              className={`inline-flex min-h-11 items-center rounded-card px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
-                active(pathname, "/casa")
-                  ? "bg-brand-accent text-text"
-                  : "text-text-muted hover:bg-surface-subtle"
-              }`}
+              className={selectableClass(active(pathname, "/casa"))}
             >
               La casa
             </Link>
@@ -60,11 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   aria-current={current ? "page" : undefined}
-                  className={`inline-flex min-h-11 items-center rounded-card px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
-                    current
-                      ? "bg-brand-accent text-text"
-                      : "text-text-muted hover:bg-surface-subtle"
-                  }`}
+                  className={selectableClass(current)}
                 >
                   {item.label}
                 </Link>

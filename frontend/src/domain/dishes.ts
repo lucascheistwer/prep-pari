@@ -58,6 +58,9 @@ export function filterDishes(dishes: Dish[], filter: DishFilter) {
       if (foldText(dish.title).includes(query)) {
         return true;
       }
+      if (dish.description && foldText(dish.description).includes(query)) {
+        return true;
+      }
       return dish.ingredients.some(
         (ingredient) =>
           ingredient.normalizedName.includes(query) ||

@@ -1,15 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DishVisual } from "@/components/dishes/DishVisual";
 import { readPhoto } from "@/components/dishes/read-photo";
 import { ScaledIngredients } from "@/components/dishes/ScaledIngredients";
-import { Button } from "@/components/ui/Button";
+import { buttonClass, Button } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Icon } from "@/components/ui/Icon";
-import { Card, Field, Notice, SelectInput, TextInput } from "@/components/ui/kit";
-import { Stepper } from "@/components/ui/Stepper";
+import {
+  Card,
+  Field,
+  Notice,
+  SelectInput,
+  selectableClass,
+  TextArea,
+  TextInput,
+} from "@/components/ui/kit";
 import { useKitchen } from "@/data/kitchen-context";
 import {
   deleteDish,
@@ -40,9 +47,9 @@ export function DishScreen({ dishId }: { dishId: string }) {
   if (!dish) {
     return (
       <div className="mx-auto max-w-lg">
-        <p className="text-sm font-semibold text-brand-primary">
-          <Link href="/comidas">Volver a las comidas</Link>
-        </p>
+        <ButtonLink href="/comidas" variant="secondary">
+          Volver a las comidas
+        </ButtonLink>
         <div className="mt-4">
           <Notice tone="info">No encontramos esa comida.</Notice>
         </div>
@@ -57,9 +64,8 @@ function DishEditor({ dishId }: { dishId: string }) {
   const snapshot = useKitchen();
   const dish = snapshot.dishes.find((item) => item.id === dishId);
   const [title, setTitle] = useState(dish?.title ?? "");
+  const [description, setDescription] = useState(dish?.description ?? "");
   const [editing, setEditing] = useState(false);
-  const [editingYield, setEditingYield] = useState(false);
-  const [piece, setPiece] = useState(dish?.pieceName ?? "");
   const [confirmSuggest, setConfirmSuggest] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +111,17 @@ function DishEditor({ dishId }: { dishId: string }) {
     if (!result.ok) {
       setError(result.message);
       setTitle(dish?.title ?? "");
+    }
+  }
+
+  function persistDescription() {
+    if (description.trim() === (dish?.description ?? "")) {
+      return;
+    }
+    const result = updateDish(dishId, { description });
+    if (!result.ok) {
+      setError(result.message);
+      setDescription(dish?.description ?? "");
     }
   }
 
@@ -159,11 +176,9 @@ function DishEditor({ dishId }: { dishId: string }) {
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <p className="text-sm font-semibold">
-        <Link href="/comidas" className="text-brand-primary">
-          Comidas
-        </Link>
-      </p>
+      <ButtonLink href="/comidas" variant="secondary">
+        Comidas
+      </ButtonLink>
       <Card className="overflow-hidden">
         <DishVisual
           title={dish.title}
@@ -172,7 +187,7 @@ function DishEditor({ dishId }: { dishId: string }) {
           className="h-52 w-full"
         />
         <div className="flex flex-wrap gap-2 p-3">
-          <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-card border border-border px-3 text-sm font-semibold">
+          <label className={buttonClass("secondary", "cursor-pointer")}>
             <Icon name="camera" className="size-5" />
             {dish.imageDataUrl ? "Cambiar foto" : "Agregar foto"}
             <input
@@ -185,7 +200,7 @@ function DishEditor({ dishId }: { dishId: string }) {
           {dish.imageDataUrl ? (
             <button
               type="button"
-              className="inline-flex min-h-11 items-center rounded-card px-3 text-sm font-semibold text-text-muted"
+              className={buttonClass("ghost")}
               onClick={() => updateDish(dish.id, { imageDataUrl: null })}
             >
               Quitar foto
@@ -201,7 +216,7 @@ function DishEditor({ dishId }: { dishId: string }) {
           type="button"
           aria-pressed={dish.favorite}
           onClick={() => updateDish(dish.id, { favorite: !dish.favorite })}
-          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-card px-2 text-sm font-semibold"
+          className={selectableClass(dish.favorite)}
         >
           <Icon
             name="heart"
@@ -237,57 +252,21 @@ function DishEditor({ dishId }: { dishId: string }) {
         </SelectInput>
       </Field>
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-text">{formatYield(dish)}</p>
-        <button
-          type="button"
-          className="min-h-11 shrink-0 text-sm font-semibold text-brand-primary"
-          onClick={() => setEditingYield((value) => !value)}
-        >
-          {editingYield ? "Listo" : "Corregir"}
-        </button>
-      </div>
-      {editingYield ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-text">Porciones</p>
-            <Stepper
-              value={dish.baseServings}
-              label="porciones que rinde"
-              onChange={(baseServings) => updateDish(dish.id, { baseServings })}
-            />
-          </div>
-          <Field id="pieza" label="Pieza">
-            <TextInput
-              id="pieza"
-              value={piece}
-              placeholder="tarta"
-              maxLength={40}
-              onChange={(event) => setPiece(event.target.value)}
-              onBlur={() =>
-                updateDish(dish.id, {
-                  pieceName: piece,
-                  pieceCount: dish.pieceCount ?? 1,
-                })
-              }
-            />
-          </Field>
-          {piece.trim() ? (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-text">Cuántas</p>
-              <Stepper
-                value={dish.pieceCount ?? 1}
-                label="piezas"
-                onChange={(pieceCount) =>
-                  updateDish(dish.id, { pieceName: piece, pieceCount })
-                }
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <Field id="descripcion-comida" label="Descripción" hint="Opcional.">
+        <TextArea
+          id="descripcion-comida"
+          value={description}
+          maxLength={400}
+          rows={3}
+          placeholder="Un detalle para reconocerla"
+          onChange={(event) => setDescription(event.target.value)}
+          onBlur={persistDescription}
+        />
+      </Field>
 
-      <p className="text-sm font-semibold text-text">{dishStatusLabel(dish)}</p>
+      <p className="text-sm text-text-muted">{formatYield(dish)}</p>
+
+      <p className="text-sm text-text-muted">{dishStatusLabel(dish)}</p>
       {dish.ingredientsStatus === "PENDING" ? (
         <Notice tone="info">Estamos armando una sugerencia.</Notice>
       ) : null}
@@ -303,13 +282,13 @@ function DishEditor({ dishId }: { dishId: string }) {
           <h2 id="ingredientes" className="font-display text-2xl text-text">
             Ingredientes
           </h2>
-          <button
+          <Button
             type="button"
-            className="min-h-11 text-sm font-semibold text-brand-primary"
+            variant="secondary"
             onClick={() => setEditing((value) => !value)}
           >
             {editing ? "Ver" : "Corregir"}
-          </button>
+          </Button>
         </div>
         <ScaledIngredients
           ingredients={dish.ingredients}
@@ -378,13 +357,13 @@ function DishEditor({ dishId }: { dishId: string }) {
                       ))}
                     </SelectInput>
                   </Field>
-                  <button
+                  <Button
                     type="button"
-                    className="min-h-11 text-sm font-semibold text-danger"
+                    variant="danger"
                     onClick={() => removeIngredient(ingredient.id)}
                   >
                     Quitar
-                  </button>
+                  </Button>
                 </Card>
               </li>
             ))}
@@ -514,7 +493,7 @@ function DishEditor({ dishId }: { dishId: string }) {
           ) : null}
           <Button
             type="button"
-            variant="ghost"
+            variant="danger"
             disabled={planned}
             onClick={() => setConfirmDelete(true)}
           >

@@ -68,6 +68,7 @@ export type DishIngredient = {
 export type Dish = {
   id: string;
   title: string;
+  description: string | null;
   category: DishCategory;
   baseServings: number;
   pieceCount: number | null;

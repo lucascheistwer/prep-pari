@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
 import { WayHome } from "@/components/household/WayHome";
 import { Alert } from "@/components/ui/Alert";
 import { Button, buttonClass } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import {
   ApiError,
   api,
@@ -142,12 +142,9 @@ export function HouseholdScreen() {
             <h1 className="font-display text-4xl tracking-tight text-balance">
               {household.name}
             </h1>
-            <Link
-              href="/casa"
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-primary"
-            >
+            <ButtonLink href="/casa" variant="secondary">
               ¿Para cuántos cocinás?
-            </Link>
+            </ButtonLink>
           </div>
 
           <section className="space-y-3">

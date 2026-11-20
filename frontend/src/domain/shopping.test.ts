@@ -35,6 +35,7 @@ function dish(id: string, baseServings: number, ingredients: DishIngredient[]): 
   return {
     id,
     title: id,
+    description: null,
     category: "OTROS",
     baseServings,
     pieceCount: null,

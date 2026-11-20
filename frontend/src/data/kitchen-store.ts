@@ -1,6 +1,6 @@
 import { applyIngredientEdits } from "@/domain/dishes";
 import { suggestIngredients, suggestYield } from "@/domain/recipes";
-import { buildSeed } from "@/domain/seed";
+import { emptyKitchen, stripSeededContent } from "@/domain/seed";
 import { buildRequirements, entriesForWeek, reconcileItems } from "@/domain/shopping";
 import { normalizeIngredientName } from "@/domain/text";
 import type {
@@ -15,9 +15,10 @@ import type {
   Snapshot,
   UnitCode,
 } from "@/domain/types";
-import { todayIso } from "@/domain/week";
 
-const STORAGE_KEY = "preppari.kitchen.v1";
+const STORAGE_KEY = "preppari.kitchen.v2";
+const LEGACY_KEY = "preppari.kitchen.v1";
+const DESCRIPTION_MAX = 400;
 
 export type StoreResult<T = undefined> =
   { ok: true; value: T } | { ok: false; message: string; needsConfirmation?: boolean };
@@ -25,14 +26,14 @@ export type StoreResult<T = undefined> =
 const listeners = new Set<() => void>();
 const suggestTokens = new Map<string, number>();
 
-let snapshot: Snapshot = buildSeed(todayIso());
+let snapshot: Snapshot = emptyKitchen();
 const serverSnapshot = snapshot;
 let hydrated = false;
 
 function emit() {
   if (typeof window !== "undefined") {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, snapshot }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, snapshot }));
     } catch {
       // Si el navegador no puede guardar, la pantalla sigue con lo que está en memoria.
     }
@@ -69,29 +70,51 @@ export function hydrate() {
   }
   hydrated = true;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      emit();
+    const current = window.localStorage.getItem(STORAGE_KEY);
+    if (current) {
+      const parsed = parseCurrent(current);
+      window.localStorage.removeItem(LEGACY_KEY);
+      if (!parsed) {
+        emit();
+        return;
+      }
+      snapshot = parsed;
+      listeners.forEach((listener) => listener());
       return;
     }
-    const parsed = parseStored(raw);
-    if (!parsed) {
-      emit();
-      return;
+    const legacy = readLegacy();
+    window.localStorage.removeItem(LEGACY_KEY);
+    if (legacy) {
+      snapshot = legacy;
     }
-    snapshot = parsed;
-    listeners.forEach((listener) => listener());
+    emit();
   } catch {
     emit();
   }
 }
 
-function parseStored(raw: string): Snapshot | null {
+function parseCurrent(raw: string): Snapshot | null {
   const parsed = JSON.parse(raw) as { version?: number; snapshot?: Snapshot };
-  if (parsed.version !== 1 || !parsed.snapshot) {
+  if (parsed.version !== 2 || !parsed.snapshot) {
     return null;
   }
-  const { dishes, entries, lists } = parsed.snapshot;
+  return normalizeSnapshot(parsed.snapshot);
+}
+
+function readLegacy(): Snapshot | null {
+  const raw = window.localStorage.getItem(LEGACY_KEY);
+  if (!raw) {
+    return null;
+  }
+  const parsed = JSON.parse(raw) as { snapshot?: Snapshot };
+  if (!parsed.snapshot) {
+    return null;
+  }
+  return normalizeSnapshot(stripSeededContent(parsed.snapshot));
+}
+
+function normalizeSnapshot(value: Snapshot): Snapshot | null {
+  const { dishes, entries, lists } = value;
   if (!Array.isArray(dishes) || !Array.isArray(entries) || !Array.isArray(lists)) {
     return null;
   }
@@ -100,16 +123,37 @@ function parseStored(raw: string): Snapshot | null {
   ) {
     return null;
   }
-  const cooksFor = parsed.snapshot.cooksFor;
   return {
-    ...parsed.snapshot,
-    cooksFor: validServings(cooksFor) ? cooksFor : 4,
+    ...value,
+    cooksFor: validServings(value.cooksFor) ? value.cooksFor : 4,
     dishes: dishes.map((dish) => ({
       ...dish,
+      description: storedDescription(dish.description),
       pieceCount: typeof dish.pieceCount === "number" ? dish.pieceCount : null,
       pieceName: typeof dish.pieceName === "string" ? dish.pieceName : null,
     })),
   };
+}
+
+function storedDescription(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.slice(0, DESCRIPTION_MAX);
+}
+
+function validDescription(
+  value: string,
+): { ok: true; value: string | null } | { ok: false } {
+  const trimmed = value.trim();
+  if (trimmed.length > DESCRIPTION_MAX) {
+    return { ok: false };
+  }
+  return { ok: true, value: trimmed || null };
 }
 
 function validServings(servings: number) {
@@ -123,6 +167,7 @@ function validTitle(title: string) {
 
 export function createDish(input: {
   title: string;
+  description?: string;
   category: DishCategory;
   imageDataUrl: string | null;
   suggest: boolean;
@@ -131,11 +176,16 @@ export function createDish(input: {
   if (!title) {
     return { ok: false, message: "Escribí un nombre para la comida." };
   }
+  const description = validDescription(input.description ?? "");
+  if (!description.ok) {
+    return { ok: false, message: "La descripción es muy larga." };
+  }
   const yieldSuggestion = suggestYield(title);
   const id = crypto.randomUUID();
   const dish: Dish = {
     id,
     title,
+    description: description.value,
     category: input.category,
     baseServings: yieldSuggestion.baseServings,
     pieceCount: yieldSuggestion.pieceCount,
@@ -159,6 +209,7 @@ export function updateDish(
     Pick<
       Dish,
       | "title"
+      | "description"
       | "category"
       | "baseServings"
       | "pieceCount"
@@ -179,6 +230,13 @@ export function updateDish(
       return { ok: false, message: "Escribí un nombre para la comida." };
     }
     next.title = title;
+  }
+  if (patch.description !== undefined) {
+    const description = validDescription(patch.description ?? "");
+    if (!description.ok) {
+      return { ok: false, message: "La descripción es muy larga." };
+    }
+    next.description = description.value;
   }
   if (patch.category !== undefined) {
     next.category = patch.category;
@@ -304,25 +362,22 @@ export function setEntry(input: {
   date: string;
   mealType: MealType;
   dishId: string;
-  servings: number;
 }): StoreResult {
   if (!snapshot.dishes.some((dish) => dish.id === input.dishId)) {
     return { ok: false, message: "No encontramos esa comida." };
   }
-  if (!validServings(input.servings)) {
-    return { ok: false, message: "Las porciones van de 1 a 30." };
-  }
+  const servings = snapshot.cooksFor;
   const existing = snapshot.entries.find(
     (entry) => entry.date === input.date && entry.mealType === input.mealType,
   );
   const next: MealEntry = existing
-    ? { ...existing, dishId: input.dishId, servings: input.servings }
+    ? { ...existing, dishId: input.dishId, servings }
     : {
         id: crypto.randomUUID(),
         dishId: input.dishId,
         date: input.date,
         mealType: input.mealType,
-        servings: input.servings,
+        servings,
       };
   const entries = existing
     ? snapshot.entries.map((entry) => (entry.id === existing.id ? next : entry))
@@ -335,23 +390,10 @@ export function setCooksFor(cooksFor: number): StoreResult {
   if (!validServings(cooksFor)) {
     return { ok: false, message: "Las porciones van de 1 a 30." };
   }
-  update({ ...snapshot, cooksFor });
-  return { ok: true, value: undefined };
-}
-
-export function setServings(entryId: string, servings: number): StoreResult {
-  if (!validServings(servings)) {
-    return { ok: false, message: "Las porciones van de 1 a 30." };
-  }
-  const existing = snapshot.entries.find((entry) => entry.id === entryId);
-  if (!existing) {
-    return { ok: false, message: "Esa comida ya no está en el plan." };
-  }
   update({
     ...snapshot,
-    entries: snapshot.entries.map((entry) =>
-      entry.id === entryId ? { ...entry, servings } : entry,
-    ),
+    cooksFor,
+    entries: snapshot.entries.map((entry) => ({ ...entry, servings: cooksFor })),
   });
   return { ok: true, value: undefined };
 }
@@ -500,7 +542,10 @@ export function generateList(weekStart: string): StoreResult<{
   incompleteDishIds: string[];
   hadPlan: boolean;
 }> {
-  const weekEntries = entriesForWeek(snapshot.entries, weekStart);
+  const weekEntries = entriesForWeek(snapshot.entries, weekStart).map((entry) => ({
+    ...entry,
+    servings: snapshot.cooksFor,
+  }));
   const { requirements, incompleteDishIds } = buildRequirements(
     snapshot.dishes,
     weekEntries,

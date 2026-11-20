@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ShoppingGroups } from "@/components/shopping/ShoppingGroups";
-import { Button } from "@/components/ui/Button";
+import { iconButtonClass, Button } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Icon } from "@/components/ui/Icon";
 import {
   Card,
@@ -23,7 +24,7 @@ import {
 } from "@/data/kitchen-store";
 import { SHOPPING_CATEGORY_LABELS, UNIT_LABELS } from "@/domain/labels";
 import { formatAmount } from "@/domain/quantity";
-import { shoppingProgress } from "@/domain/shopping";
+import { entriesForWeek, shoppingProgress } from "@/domain/shopping";
 import {
   SHOPPING_CATEGORIES,
   UNIT_CODES,
@@ -46,20 +47,21 @@ export function ShoppingScreen() {
     .map((id) => snapshot.dishes.find((dish) => dish.id === id))
     .filter((dish) => dish != null);
   const hasGenerated = items.some((item) => item.origin === "GENERATED");
+  const hasPlan = entriesForWeek(snapshot.entries, start).length > 0;
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
       <div>
         <h1 className="font-display text-3xl text-text">Compras</h1>
         <p className="mt-1 text-sm text-text-muted">
-          La lista de la casa, para esta semana.
+          Sale de las comidas de la semana. Lo de mano se queda.
         </p>
       </div>
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           aria-label="Semana anterior"
-          className="grid size-11 place-items-center rounded-card border border-border bg-surface"
+          className={iconButtonClass()}
           onClick={() => {
             setStart(addDays(start, -7));
             setNote(null);
@@ -71,7 +73,7 @@ export function ShoppingScreen() {
         <button
           type="button"
           aria-label="Semana siguiente"
-          className="grid size-11 place-items-center rounded-card border border-border bg-surface"
+          className={iconButtonClass()}
           onClick={() => {
             setStart(addDays(start, 7));
             setNote(null);
@@ -101,27 +103,31 @@ export function ShoppingScreen() {
       ) : null}
 
       <div className="space-y-2">
-        <Button
-          type="button"
-          className="w-full"
-          onClick={() => {
-            const result = generateList(start);
-            if (!result.ok) {
-              setError(result.message);
-              return;
-            }
-            setError(null);
-            setNote(
-              result.value.hadPlan
-                ? "Lista actualizada. Lo que agregaste a mano sigue ahí."
-                : "No hay comidas en el plan. Lo que agregaste a mano sigue en la lista.",
-            );
-          }}
-        >
-          {hasGenerated ? "Actualizar desde el plan" : "Generar lista"}
-        </Button>
+        {hasPlan ? (
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => {
+              const result = generateList(start);
+              if (!result.ok) {
+                setError(result.message);
+                return;
+              }
+              setError(null);
+              setNote("Lista actualizada. Lo que agregaste a mano sigue ahí.");
+            }}
+          >
+            {hasGenerated ? "Actualizar desde el plan" : "Generar lista"}
+          </Button>
+        ) : items.length > 0 ? (
+          <ButtonLink href="/plan" className="w-full">
+            Ir al plan
+          </ButtonLink>
+        ) : null}
         <p className="text-sm text-text-muted">
-          Lo que agregues a mano se queda al actualizar.
+          {hasPlan
+            ? "Lo que agregues a mano se queda al actualizar."
+            : "Elegí las comidas de la semana y la lista se arma con eso."}
         </p>
       </div>
       {note ? <Notice tone="info">{note}</Notice> : null}
@@ -143,8 +149,17 @@ export function ShoppingScreen() {
 
       {items.length === 0 ? (
         <EmptyState
-          title="Nada en la lista"
-          text="Generala desde el plan o agregá algo que haga falta."
+          title={hasPlan ? "Nada en la lista" : "Todavía no hay compras"}
+          text={
+            hasPlan
+              ? "Generala con las comidas de esta semana, o agregá algo que haga falta."
+              : "Cuando armes la semana, la lista aparece acá. También podés sumar algo suelto."
+          }
+          action={
+            hasPlan ? undefined : (
+              <ButtonLink href="/plan">Planificar la semana</ButtonLink>
+            )
+          }
         />
       ) : (
         <ShoppingGroups
@@ -244,21 +259,13 @@ function ItemRow({
           ) : null}
         </span>
       </button>
-      <div className="flex gap-2 px-3 pb-2">
-        <button
-          type="button"
-          className="min-h-11 text-sm font-semibold text-text"
-          onClick={onEdit}
-        >
+      <div className="flex flex-wrap gap-2 px-3 pb-3">
+        <Button type="button" variant="secondary" onClick={onEdit}>
           {editing ? "Cerrar" : "Editar"}
-        </button>
-        <button
-          type="button"
-          className="min-h-11 text-sm font-semibold text-danger"
-          onClick={onRemove}
-        >
+        </Button>
+        <Button type="button" variant="danger" onClick={onRemove}>
           Quitar
-        </button>
+        </Button>
       </div>
       {editing ? <ItemForm item={item} onSave={onSave} /> : null}
     </Card>
