@@ -32,7 +32,27 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href="/inicio" aria-label="PrepPari, inicio">
             <Wordmark />
           </Link>
+          <Link
+            href="/casa"
+            aria-current={pathname === "/casa" ? "page" : undefined}
+            className={`inline-flex min-h-11 items-center rounded-card px-3 text-sm font-semibold md:hidden ${
+              pathname === "/casa" ? "text-brand-primary" : "text-text"
+            }`}
+          >
+            La casa
+          </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Secciones">
+            <Link
+              href="/casa"
+              aria-current={active(pathname, "/casa") ? "page" : undefined}
+              className={`inline-flex min-h-11 items-center rounded-card px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
+                active(pathname, "/casa")
+                  ? "bg-brand-accent text-text"
+                  : "text-text-muted hover:bg-surface-subtle"
+              }`}
+            >
+              La casa
+            </Link>
             {items.map((item) => {
               const current = active(pathname, item.href);
               return (

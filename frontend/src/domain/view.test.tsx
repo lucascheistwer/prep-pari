@@ -32,6 +32,6 @@ test("la vista muestra la harina escalada y la lista agrupada", () => {
   const produce = html.indexOf("Verdulería");
   const pantry = html.indexOf("Almacén");
   assert.ok(produce >= 0 && pantry > produce);
-  assert.match(html, /3,1 kg/);
+  assert.match(html, /3,5 kg/);
   assert.match(html, /Huevos/);
 });

@@ -26,6 +26,8 @@ export type Recipe = {
   title: string;
   category: DishCategory;
   baseServings: number;
+  pieceCount: number | null;
+  pieceName: string | null;
   ingredients: RecipeIngredient[];
 };
 
@@ -48,6 +50,8 @@ export const RECIPES: Record<string, Recipe> = {
     title: "Milanesas con puré",
     category: "CARNES",
     baseServings: 4,
+    pieceCount: null,
+    pieceName: null,
     ingredients: [
       ingredient("Nalga", "500", "g", "CARNICERIA"),
       ingredient("Papa", "800", "g", "VERDULERIA"),
@@ -61,7 +65,9 @@ export const RECIPES: Record<string, Recipe> = {
   "tarta de verduras": {
     title: "Tarta de verduras",
     category: "TARTAS_Y_EMPANADAS",
-    baseServings: 4,
+    baseServings: 6,
+    pieceCount: 1,
+    pieceName: "tarta",
     ingredients: [
       ingredient("Tapas de tarta", "2", "unit", "PANADERIA"),
       ingredient("Acelga", "400", "g", "VERDULERIA"),
@@ -76,6 +82,8 @@ export const RECIPES: Record<string, Recipe> = {
     title: "Ñoquis de papa",
     category: "PASTAS",
     baseServings: 6,
+    pieceCount: 1,
+    pieceName: "fuente",
     ingredients: [
       ingredient("Papa", "1", "kg", "VERDULERIA"),
       ingredient("Harina 0000", "300", "g", "ALMACEN"),
@@ -87,6 +95,8 @@ export const RECIPES: Record<string, Recipe> = {
     title: "Pollo al horno con papas",
     category: "POLLO",
     baseServings: 4,
+    pieceCount: null,
+    pieceName: null,
     ingredients: [
       ingredient("Pollo", "1.2", "kg", "CARNICERIA"),
       ingredient("Papa", "1", "kg", "VERDULERIA"),
@@ -99,6 +109,8 @@ export const RECIPES: Record<string, Recipe> = {
     title: "Ensalada completa",
     category: "ENSALADAS",
     baseServings: 2,
+    pieceCount: null,
+    pieceName: null,
     ingredients: [
       ingredient("Lechuga", "1", "unit", "VERDULERIA"),
       ingredient("Tomate", "2", "unit", "VERDULERIA"),
@@ -111,6 +123,8 @@ export const RECIPES: Record<string, Recipe> = {
     title: "Sopa de lentejas",
     category: "SOPAS_Y_GUISOS",
     baseServings: 4,
+    pieceCount: 1,
+    pieceName: "olla",
     ingredients: [
       ingredient("Lentejas", "300", "g", "ALMACEN"),
       ingredient("Zanahoria", "1", "unit", "VERDULERIA"),
@@ -124,6 +138,8 @@ export const RECIPES: Record<string, Recipe> = {
     title: "Sandwich de milanesa",
     category: "SANDWICHES",
     baseServings: 2,
+    pieceCount: null,
+    pieceName: null,
     ingredients: [
       ingredient("Pan", "2", "unit", "PANADERIA"),
       ingredient("Lechuga", "1", "unit", "VERDULERIA"),
@@ -191,4 +207,39 @@ export function suggestIngredients(
     note: item.note,
   }));
   return { category: recipe?.category ?? null, ingredients };
+}
+
+export type YieldSuggestion = {
+  baseServings: number;
+  pieceCount: number | null;
+  pieceName: string | null;
+};
+
+export function suggestYield(title: string): YieldSuggestion {
+  const key = title
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+  const recipe = RECIPES[key];
+  if (!recipe) {
+    return { baseServings: 4, pieceCount: null, pieceName: null };
+  }
+  return {
+    baseServings: recipe.baseServings,
+    pieceCount: recipe.pieceCount,
+    pieceName: recipe.pieceName,
+  };
+}
+
+export function formatYield(dish: YieldSuggestion) {
+  const portions =
+    dish.baseServings === 1 ? "1 porción" : `${dish.baseServings} porciones`;
+  const piece = dish.pieceName?.trim();
+  if (!piece || !dish.pieceCount || dish.pieceCount < 1) {
+    return `Rinde ${portions}`;
+  }
+  const name = dish.pieceCount === 1 || piece.endsWith("s") ? piece : `${piece}s`;
+  return `Rinde ${dish.pieceCount} ${name} (~${portions})`;
 }

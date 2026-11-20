@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { scaleIngredientForView } from "@/domain/dishes";
+import { formatYield, suggestYield } from "@/domain/recipes";
 import {
   formatAmount,
   formatCanonical,
@@ -35,6 +36,23 @@ test("1,5 kg se muestra en kilos y no se convierte una taza a gramos", () => {
   assert.equal(formatAmount("2", "cup"), "2 tazas");
   assert.equal(formatAmount(null, null), "Cantidad a definir");
   assert.equal(formatAmount(null, "to_taste"), "A gusto");
+});
+
+test("el rinde se sugiere con la comida y el plan parte de la casa", () => {
+  assert.equal(
+    formatYield(suggestYield("Tarta de verduras")),
+    "Rinde 1 tarta (~6 porciones)",
+  );
+  assert.equal(formatYield(suggestYield("Milanesas con puré")), "Rinde 4 porciones");
+  assert.equal(formatYield(suggestYield("Fideos con tuco")), "Rinde 4 porciones");
+  assert.equal(suggestYield("Tarta de verduras").baseServings, 6);
+});
+
+test("la lista escala con las porciones del plan sobre el rinde", () => {
+  const quantity = parseQuantity("600");
+  assert.ok(quantity);
+  assert.equal(formatCanonical(scaleQuantity(quantity, 6, 2), "g"), "200 g");
+  assert.equal(formatCanonical(scaleQuantity(quantity, 4, 4), "g"), "600 g");
 });
 
 test("la vista de la comida escala sin marcar la cantidad como confirmada", () => {

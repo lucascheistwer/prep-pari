@@ -64,7 +64,7 @@ export function HomeScreen() {
                     <p className="mt-1 font-semibold text-text">
                       {dish?.title ?? "Comida"}
                     </p>
-                    <p className="text-sm text-text-muted">{entry.servings} porciones</p>
+                    <p className="text-sm text-text-muted">Para {entry.servings}</p>
                   </Card>
                 </li>
               );
@@ -125,7 +125,7 @@ function TodayMeal({
         <Link href={`/comidas/${dish.id}`} className="mt-1 block">
           <span className="font-display text-2xl text-text">{dish.title}</span>
           <span className="mt-1 block text-sm text-text-muted">
-            {entry.servings} porciones
+            Para {entry.servings}
           </span>
         </Link>
       ) : (

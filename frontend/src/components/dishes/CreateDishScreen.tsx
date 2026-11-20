@@ -5,7 +5,6 @@ import { useState } from "react";
 import { readPhoto } from "@/components/dishes/read-photo";
 import { Button } from "@/components/ui/Button";
 import { Field, Notice, SelectInput, TextInput } from "@/components/ui/kit";
-import { Stepper } from "@/components/ui/Stepper";
 import { createDish } from "@/data/kitchen-store";
 import { DISH_CATEGORY_LABELS } from "@/domain/labels";
 import { DISH_CATEGORIES, type DishCategory } from "@/domain/types";
@@ -14,7 +13,6 @@ export function CreateDishScreen() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<DishCategory>("OTROS");
-  const [servings, setServings] = useState(4);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -34,13 +32,7 @@ export function CreateDishScreen() {
   }
 
   function save(suggest: boolean) {
-    const result = createDish({
-      title,
-      category,
-      baseServings: servings,
-      imageDataUrl,
-      suggest,
-    });
+    const result = createDish({ title, category, imageDataUrl, suggest });
     if (!result.ok) {
       setError(result.message);
       return;
@@ -87,10 +79,6 @@ export function CreateDishScreen() {
             ))}
           </SelectInput>
         </Field>
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-text">Porciones</p>
-          <Stepper value={servings} onChange={setServings} label="porciones" />
-        </div>
         <div className="space-y-2">
           <p className="text-sm font-semibold text-text">Foto</p>
           <label className="inline-flex min-h-11 cursor-pointer items-center rounded-card border border-border bg-surface px-4 text-sm font-semibold text-text">

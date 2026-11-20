@@ -27,6 +27,8 @@ function dishFromRecipe(key: string, favorite: boolean): Dish {
     title: titleFromKey(key),
     category: suggested.category ?? recipe.category,
     baseServings: recipe.baseServings,
+    pieceCount: recipe.pieceCount,
+    pieceName: recipe.pieceName,
     favorite,
     imageDataUrl: null,
     ingredientsStatus: "READY",
@@ -56,6 +58,8 @@ function emptyDish(): Dish {
     title: "Arroz con atún",
     category: "ARROCES_Y_CEREALES",
     baseServings: 2,
+    pieceCount: null,
+    pieceName: null,
     favorite: false,
     imageDataUrl: null,
     ingredientsStatus: "NOT_REQUESTED",
@@ -83,7 +87,7 @@ export function buildSeed(today: string): Snapshot {
       dishId: "dish-milanesas-con-pure",
       date: day(0),
       mealType: "LUNCH" as const,
-      servings: 2,
+      servings: 4,
     },
     {
       id: "entry-mon-dinner",
@@ -167,7 +171,7 @@ export function buildSeed(today: string): Snapshot {
     items,
     incompleteDishIds,
   };
-  return { dishes, entries, lists: [list] };
+  return { dishes, entries, lists: [list], cooksFor: 4 };
 }
 
 function existingManuals(): ShoppingItem[] {

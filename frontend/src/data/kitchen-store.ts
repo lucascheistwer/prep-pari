@@ -1,5 +1,5 @@
 import { applyIngredientEdits } from "@/domain/dishes";
-import { suggestIngredients } from "@/domain/recipes";
+import { suggestIngredients, suggestYield } from "@/domain/recipes";
 import { buildSeed } from "@/domain/seed";
 import { buildRequirements, entriesForWeek, reconcileItems } from "@/domain/shopping";
 import { normalizeIngredientName } from "@/domain/text";
@@ -100,7 +100,16 @@ function parseStored(raw: string): Snapshot | null {
   ) {
     return null;
   }
-  return parsed.snapshot;
+  const cooksFor = parsed.snapshot.cooksFor;
+  return {
+    ...parsed.snapshot,
+    cooksFor: validServings(cooksFor) ? cooksFor : 4,
+    dishes: dishes.map((dish) => ({
+      ...dish,
+      pieceCount: typeof dish.pieceCount === "number" ? dish.pieceCount : null,
+      pieceName: typeof dish.pieceName === "string" ? dish.pieceName : null,
+    })),
+  };
 }
 
 function validServings(servings: number) {
@@ -115,7 +124,6 @@ function validTitle(title: string) {
 export function createDish(input: {
   title: string;
   category: DishCategory;
-  baseServings: number;
   imageDataUrl: string | null;
   suggest: boolean;
 }): StoreResult<string> {
@@ -123,15 +131,15 @@ export function createDish(input: {
   if (!title) {
     return { ok: false, message: "Escribí un nombre para la comida." };
   }
-  if (!validServings(input.baseServings)) {
-    return { ok: false, message: "Las porciones van de 1 a 30." };
-  }
+  const yieldSuggestion = suggestYield(title);
   const id = crypto.randomUUID();
   const dish: Dish = {
     id,
     title,
     category: input.category,
-    baseServings: input.baseServings,
+    baseServings: yieldSuggestion.baseServings,
+    pieceCount: yieldSuggestion.pieceCount,
+    pieceName: yieldSuggestion.pieceName,
     favorite: false,
     imageDataUrl: input.imageDataUrl,
     ingredientsStatus: "NOT_REQUESTED",
@@ -148,7 +156,16 @@ export function createDish(input: {
 export function updateDish(
   id: string,
   patch: Partial<
-    Pick<Dish, "title" | "category" | "baseServings" | "favorite" | "imageDataUrl">
+    Pick<
+      Dish,
+      | "title"
+      | "category"
+      | "baseServings"
+      | "pieceCount"
+      | "pieceName"
+      | "favorite"
+      | "imageDataUrl"
+    >
   >,
 ): StoreResult {
   const dish = snapshot.dishes.find((item) => item.id === id);
@@ -171,6 +188,16 @@ export function updateDish(
       return { ok: false, message: "Las porciones van de 1 a 30." };
     }
     next.baseServings = patch.baseServings;
+  }
+  if (patch.pieceName !== undefined) {
+    const piece = patch.pieceName?.trim() ?? "";
+    next.pieceName = piece ? piece.slice(0, 40) : null;
+    if (!next.pieceName) {
+      next.pieceCount = null;
+    }
+  }
+  if (patch.pieceCount != null && next.pieceName) {
+    next.pieceCount = validServings(patch.pieceCount) ? patch.pieceCount : 1;
   }
   if (patch.favorite !== undefined) {
     next.favorite = patch.favorite;
@@ -301,6 +328,14 @@ export function setEntry(input: {
     ? snapshot.entries.map((entry) => (entry.id === existing.id ? next : entry))
     : [...snapshot.entries, next];
   update({ ...snapshot, entries });
+  return { ok: true, value: undefined };
+}
+
+export function setCooksFor(cooksFor: number): StoreResult {
+  if (!validServings(cooksFor)) {
+    return { ok: false, message: "Las porciones van de 1 a 30." };
+  }
+  update({ ...snapshot, cooksFor });
   return { ok: true, value: undefined };
 }
 

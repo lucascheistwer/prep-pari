@@ -70,6 +70,8 @@ export type Dish = {
   title: string;
   category: DishCategory;
   baseServings: number;
+  pieceCount: number | null;
+  pieceName: string | null;
   favorite: boolean;
   imageDataUrl: string | null;
   ingredientsStatus: EnrichmentStatus;
@@ -110,6 +112,7 @@ export type Snapshot = {
   dishes: Dish[];
   entries: MealEntry[];
   lists: ShoppingList[];
+  cooksFor: number;
 };
 
 export type IngredientDraft = {

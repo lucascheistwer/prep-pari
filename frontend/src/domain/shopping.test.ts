@@ -37,6 +37,8 @@ function dish(id: string, baseServings: number, ingredients: DishIngredient[]): 
     title: id,
     category: "OTROS",
     baseServings,
+    pieceCount: null,
+    pieceName: null,
     favorite: false,
     imageDataUrl: null,
     ingredientsStatus: ingredients.length ? "READY" : "NOT_REQUESTED",
@@ -263,7 +265,7 @@ test("la lista de la semana agrupa por categoría y advierte el manual repetido"
   assert.equal(list.weekStart, "2026-11-16");
   assert.equal(list.incompleteDishIds.includes("dish-arroz-con-atun"), true);
   const papa = list.items.find((entry) => entry.generatedKey === "papa:g");
-  assert.equal(papa?.quantity, "3100");
+  assert.equal(papa?.quantity, "3500");
   const groups = groupShoppingItems(list.items);
   assert.deepEqual(
     groups.map((group) => group.label),

@@ -90,6 +90,7 @@ export function PlannerScreen() {
       {picker ? (
         <DishPicker
           dishes={snapshot.dishes}
+          initialServings={snapshot.cooksFor}
           onClose={() => setPicker(null)}
           onChoose={(dishId, servings) => {
             setEntry({ ...picker, dishId, servings });
@@ -203,10 +204,10 @@ function DayColumn({
                   {dish.title}
                 </Link>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-text-muted">Porciones</span>
+                  <span className="text-sm text-text-muted">Para cuántos</span>
                   <Stepper
                     value={entry.servings}
-                    label={`porciones de ${dish.title}`}
+                    label={`para cuántos, ${dish.title}`}
                     onChange={(servings) => onServings(entry.id, servings)}
                   />
                 </div>
@@ -266,16 +267,18 @@ function DayColumn({
 
 function DishPicker({
   dishes,
+  initialServings,
   onClose,
   onChoose,
 }: {
-  dishes: { id: string; title: string; baseServings: number }[];
+  dishes: { id: string; title: string }[];
+  initialServings: number;
   onClose: () => void;
   onChoose: (dishId: string, servings: number) => void;
 }) {
   const [query, setQuery] = useState("");
   const [dishId, setDishId] = useState<string | null>(null);
-  const [servings, setServings] = useState(4);
+  const [servings, setServings] = useState(initialServings);
   const visible = useMemo(
     () =>
       dishes.filter((dish) =>
@@ -323,10 +326,7 @@ function DishPicker({
                     ? "border-brand-primary bg-brand-accent/40"
                     : "border-border bg-surface"
                 }`}
-                onClick={() => {
-                  setDishId(dish.id);
-                  setServings(dish.baseServings);
-                }}
+                onClick={() => setDishId(dish.id)}
               >
                 {dish.title}
               </button>
@@ -336,8 +336,8 @@ function DishPicker({
         {chosen ? (
           <div className="mt-auto space-y-3 pb-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">Porciones</p>
-              <Stepper value={servings} onChange={setServings} label="porciones" />
+              <p className="text-sm font-semibold">Para cuántos</p>
+              <Stepper value={servings} onChange={setServings} label="para cuántos" />
             </div>
             <Button
               type="button"

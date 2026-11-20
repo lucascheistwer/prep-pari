@@ -18,6 +18,7 @@ import {
   updateDish,
 } from "@/data/kitchen-store";
 import { dishStatusLabel } from "@/domain/dishes";
+import { formatYield } from "@/domain/recipes";
 import {
   DISH_CATEGORY_LABELS,
   SHOPPING_CATEGORY_LABELS,
@@ -56,8 +57,9 @@ function DishEditor({ dishId }: { dishId: string }) {
   const snapshot = useKitchen();
   const dish = snapshot.dishes.find((item) => item.id === dishId);
   const [title, setTitle] = useState(dish?.title ?? "");
-  const [preview, setPreview] = useState(dish?.baseServings ?? 4);
   const [editing, setEditing] = useState(false);
+  const [editingYield, setEditingYield] = useState(false);
+  const [piece, setPiece] = useState(dish?.pieceName ?? "");
   const [confirmSuggest, setConfirmSuggest] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -236,19 +238,54 @@ function DishEditor({ dishId }: { dishId: string }) {
       </Field>
 
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-text">Rinde</p>
-          <p className="text-sm text-text-muted">Porciones de la receta</p>
-        </div>
-        <Stepper
-          value={dish.baseServings}
-          label="porciones de la receta"
-          onChange={(baseServings) => {
-            updateDish(dish.id, { baseServings });
-            setPreview(baseServings);
-          }}
-        />
+        <p className="text-sm text-text">{formatYield(dish)}</p>
+        <button
+          type="button"
+          className="min-h-11 shrink-0 text-sm font-semibold text-brand-primary"
+          onClick={() => setEditingYield((value) => !value)}
+        >
+          {editingYield ? "Listo" : "Corregir"}
+        </button>
       </div>
+      {editingYield ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-text">Porciones</p>
+            <Stepper
+              value={dish.baseServings}
+              label="porciones que rinde"
+              onChange={(baseServings) => updateDish(dish.id, { baseServings })}
+            />
+          </div>
+          <Field id="pieza" label="Pieza">
+            <TextInput
+              id="pieza"
+              value={piece}
+              placeholder="tarta"
+              maxLength={40}
+              onChange={(event) => setPiece(event.target.value)}
+              onBlur={() =>
+                updateDish(dish.id, {
+                  pieceName: piece,
+                  pieceCount: dish.pieceCount ?? 1,
+                })
+              }
+            />
+          </Field>
+          {piece.trim() ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-text">Cuántas</p>
+              <Stepper
+                value={dish.pieceCount ?? 1}
+                label="piezas"
+                onChange={(pieceCount) =>
+                  updateDish(dish.id, { pieceName: piece, pieceCount })
+                }
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <p className="text-sm font-semibold text-text">{dishStatusLabel(dish)}</p>
       {dish.ingredientsStatus === "PENDING" ? (
@@ -274,18 +311,10 @@ function DishEditor({ dishId }: { dishId: string }) {
             {editing ? "Ver" : "Corregir"}
           </button>
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-text-muted">
-            {preview === dish.baseServings
-              ? `Para ${preview} ${preview === 1 ? "porción" : "porciones"}.`
-              : `Así se ve para ${preview} ${preview === 1 ? "porción" : "porciones"}. La receta sigue en ${dish.baseServings}.`}
-          </p>
-          <Stepper value={preview} onChange={setPreview} label="porciones para ver" />
-        </div>
         <ScaledIngredients
           ingredients={dish.ingredients}
           baseServings={dish.baseServings}
-          servings={preview}
+          servings={dish.baseServings}
         />
         {editing ? (
           <ul className="space-y-3">
