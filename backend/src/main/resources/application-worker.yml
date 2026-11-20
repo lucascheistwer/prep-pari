@@ -1,0 +1,15 @@
+spring:
+  main:
+    web-application-type: none
+  flyway:
+    enabled: false
+
+preppari:
+  runtime:
+    mode: worker
+  ai:
+    provider: fake
+
+logging:
+  level:
+    com.preppari: INFO

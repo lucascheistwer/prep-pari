@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "frontend": {
+      "root": "frontend/"
+    },
+    "api": {
+      "root": "backend/",
+      "runtime": "container",
+      "entrypoint": "Dockerfile"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/ws/(.*)", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ],
+  "daemons": {
+    "enrichment-worker": {
+      "root": "backend/",
+      "entrypoint": "Dockerfile.worker",
+      "instances": { "iad1": 1 },
+      "terminationGracePeriodSeconds": 30
+    }
+  }
+}

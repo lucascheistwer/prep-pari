@@ -1,0 +1,14 @@
+# Desarrollo en el host o contenedor de la API. Un solo proceso corre migraciones.
+spring:
+  flyway:
+    enabled: true
+
+preppari:
+  runtime:
+    mode: api
+  ai:
+    provider: fake
+
+logging:
+  level:
+    com.preppari: INFO

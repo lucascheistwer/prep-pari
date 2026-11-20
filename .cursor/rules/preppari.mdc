@@ -1,0 +1,16 @@
+---
+description: Convenciones de PrepPari para el MVP
+alwaysApply: true
+---
+
+PrepPari es un monolito modular hexagonal (Next.js + Spring Boot). No crear microservicios ni brokers además de PostgreSQL y Redis Pub/Sub.
+
+- Dominio sin Spring, JPA, HTTP ni SDKs de proveedores.
+- IA solo detrás de ports, con `fake` por defecto. No hardcodear modelos ni llamar al proveedor desde el frontend.
+- La IA propone; el usuario confirma. La lista compartida conserva los ítems manuales.
+- Autorizar por membresía activa del hogar en el caso de uso, no solo por un id del cliente.
+- Tokens Tomato & Butter centralizados. No reutilizar la paleta de Mi Cucha.
+- Nombre visible: PrepPari. Slugs y paquetes: preppari.
+- Trabajos durables en `background_job`, claim con `FOR UPDATE SKIP LOCKED`, worker en proceso separado.
+- Si falta una decisión, elegir lo más simple, documentarlo en `docs/decisions` y no ampliar el MVP.
+- La fuente de verdad es `docs/PRD.md`.
