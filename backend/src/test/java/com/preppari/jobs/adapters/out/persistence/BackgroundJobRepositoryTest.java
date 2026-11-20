@@ -57,9 +57,27 @@ class BackgroundJobRepositoryTest {
   @Autowired private DataSource dataSource;
   @Autowired private DishEnrichmentPort enrichment;
 
+  private static final UUID HOUSEHOLD_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
+  private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
+
   @BeforeEach
   void clean() {
     jdbc.update("DELETE FROM background_job");
+    jdbc.update(
+        """
+        INSERT INTO app_user (id, external_subject, email, display_name, created_at, updated_at)
+        VALUES (?, 'dev:job-test', 'jobs@preppari.test', 'Jobs', now(), now())
+        ON CONFLICT (id) DO NOTHING
+        """,
+        USER_ID);
+    jdbc.update(
+        """
+        INSERT INTO household (id, name, timezone, created_by, created_at, updated_at)
+        VALUES (?, 'Jobs', 'America/Argentina/Buenos_Aires', ?, now(), now())
+        ON CONFLICT (id) DO NOTHING
+        """,
+        HOUSEHOLD_ID,
+        USER_ID);
   }
 
   @Test
@@ -255,7 +273,7 @@ class BackgroundJobRepositoryTest {
 
   private NewBackgroundJob job(Duration availableIn, int priority, String key, String payload) {
     return new NewBackgroundJob(
-        UUID.randomUUID(),
+        HOUSEHOLD_ID,
         JobType.GENERATE_DISH_INGREDIENTS,
         "DISH",
         UUID.randomUUID(),

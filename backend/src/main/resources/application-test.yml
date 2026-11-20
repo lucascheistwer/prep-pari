@@ -7,6 +7,13 @@ preppari:
     mode: api
   ai:
     provider: fake
+  auth:
+    dev-login-enabled: true
+    session-secret: test-session-secret-at-least-32-chars
+    public-origin: http://localhost:3000
+    google:
+      verifier: test
+      client-id: test-client-id
 
 logging:
   level:

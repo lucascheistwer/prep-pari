@@ -1,6 +1,7 @@
 package com.preppari;
 
 import com.preppari.bootstrap.configuration.AiProperties;
+import com.preppari.bootstrap.configuration.AuthProperties;
 import com.preppari.bootstrap.configuration.WorkerProperties;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,7 +9,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({AiProperties.class, WorkerProperties.class})
+@EnableConfigurationProperties({AiProperties.class, AuthProperties.class, WorkerProperties.class})
 public class PrepPariApplication {
 
   public static void main(String[] args) {

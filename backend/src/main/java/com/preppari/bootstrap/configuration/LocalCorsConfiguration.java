@@ -15,6 +15,8 @@ public class LocalCorsConfiguration implements WebMvcConfigurer {
     registry
         .addMapping("/api/**")
         .allowedOrigins("http://localhost:3000")
-        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE");
+        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE")
+        .allowedHeaders("Content-Type", "Authorization", "X-Request-Id")
+        .allowCredentials(true);
   }
 }
